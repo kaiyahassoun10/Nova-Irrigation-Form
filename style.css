@@ -340,10 +340,11 @@ th.num {
   white-space: nowrap;
 }
 /* Print styles */
-@media print {
+/* @media print {
   .no-print {
     display: none !important;
   }
+  
   body {
     background: #fff;
   }
@@ -357,7 +358,245 @@ th.num {
   .station {
     page-break-inside: avoid;
   }
+}  */
+  /* ---------- PRINT / EXPORT TO PDF LAYOUT ---------- */
+
+/* Page size + margins for the PDF */
+@page {
+  size: Letter;
+  margin: 12mm 10mm;
 }
+
+@media print {
+  /* Use full page, white background */
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff !important;
+    color: #111827 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Stretch main content so it doesn't sit in a skinny column */
+  .container,
+  main,
+  .page,
+  .shell {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 14mm !important; /* left/right padding only */
+  }
+
+  /* Hide UI stuff: tabs, buttons, export tab, etc. */
+  .tabs,
+  .no-print,
+  button,
+  .btn,
+  input[type="file"],
+  #tab-catalog,
+  #tab-clientCatalog,
+  #tab-export {
+    display: none !important;
+  }
+
+  /* Always show ONLY the current job: Client Info + Stations */
+  #tab-client,
+  #tab-stations {
+    display: block !important;
+  }
+
+  /* Cards become flat sections (no rounded boxes/shadows) */
+  .card {
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 0 10px 0 !important;
+  }
+
+  /* ---------- HEADER (LOGO + TITLE) ---------- */
+
+  header {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px 0 10px;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Logo should be a bit smaller on the report */
+  header img,
+  header .logo {
+    max-height: 60px !important;
+    width: auto !important;
+    margin-bottom: 6px;
+  }
+
+  /* Replace on-screen title with SERVICE REPORT for print */
+  header h1 {
+    font-size: 0 !important;
+    margin: 0;
+  }
+
+  header h1::after {
+    content: "SERVICE REPORT";
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* Optional subtitle (the small text under section titles) */
+  .section-title {
+    font-size: 13px !important;
+    margin: 4px 0 6px !important;
+  }
+
+  .section-helper {
+    margin-bottom: 4px !important;
+    font-size: 10px !important;
+    color: #6b7280 !important;
+  }
+
+  .section-group {
+    margin-top: 6px !important;
+    padding-top: 4px !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+
+  .group-title {
+    font-size: 9px !important;
+    letter-spacing: 0.16em !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* ---------- CLIENT / PROPERTY INFO LAYOUT ---------- */
+
+  /* Make the two-column layout tighter */
+  #tab-client .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 24px !important;
+    row-gap: 2px !important;
+  }
+
+  #tab-client label {
+    font-size: 10px !important;
+    color: #6b7280 !important;
+    font-weight: 600 !important;
+    margin-bottom: 0 !important;
+    display: block;
+  }
+
+  #tab-client input,
+  #tab-client select,
+  #tab-client textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin-bottom: 2px !important;
+    font-size: 11px !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+  }
+
+  /* Notes area */
+  #tab-client textarea {
+    background: #f9fafb !important;
+    border-radius: 6px !important;
+    padding: 6px !important;
+    min-height: 60px !important;
+  }
+
+  /* ---------- STATIONS / REPAIRS ---------- */
+
+  #tab-stations .section-title {
+    font-size: 13px !important;
+    margin: 6px 0 4px !important;
+  }
+
+  .station {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    padding: 6px 8px !important;
+    margin: 8px 0 !important;
+    page-break-inside: avoid;
+  }
+
+  .station .flex-between {
+    margin-bottom: 4px !important;
+  }
+
+  .station .subtotal {
+    font-weight: 800 !important;
+  }
+
+  /* Problems table inside each station */
+  .station table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2px !important;
+    font-size: 11px !important;
+  }
+
+  .station th,
+  .station td {
+    border-top: 1px solid #e5e7eb;
+    padding: 3px 4px !important;
+  }
+
+  .station thead th {
+    border-top: none;
+    background: #f9fafb;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .station th.num,
+  .station td.num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Station photo + notes: more compact */
+  .station .photo img,
+  .station .photo-box {
+    width: 120px !important;
+    height: 120px !important;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .station textarea {
+    font-size: 11px !important;
+    padding: 4px !important;
+    background: #f9fafb !important;
+    border-radius: 8px !important;
+  }
+
+  /* Hide interactive station controls when printing */
+  #tab-stations .no-print,
+  #tab-stations button {
+    display: none !important;
+  }
+
+  /* Grand Total at bottom */
+  #grandTotalTop,
+  .totals {
+    font-weight: 800 !important;
+    font-size: 12px !important;
+    text-align: right !important;
+    margin-top: 6px !important;
+  }
+}
+
 #nova-branding-lite-client-catalog {
   #cc_table {
     width: 100%;
@@ -387,4 +626,25 @@ th.num {
 
 #tab-catalog button {
   margin-top: 8px !important;
+}
+
+@media print {
+  /* ❌ Hide ALL header text on PDF */
+  header h1,
+  header h2,
+  header p,
+  header span,
+  header .brand-text,
+  header .brand-subtitle {
+    display: none !important;
+  }
+
+  /* ✅ Show ONLY the logo centered on PDF */
+  header img,
+  header .logo {
+    display: block !important;
+    margin: 0 auto 8px auto !important;
+    max-height: 60px !important;
+    width: auto !important;
+  }
 }
