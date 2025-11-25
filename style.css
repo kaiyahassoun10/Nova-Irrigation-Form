@@ -172,6 +172,31 @@ input[type="number"]::-webkit-outer-spin-button,
 select::-ms-expand {
   display: none;
 }
+
+/* Print-only date text (shown instead of the date input to avoid browser formatting quirks) */
+.print-date {
+  display: none;
+}
+@media print {
+  #tab-client .grid-2 > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  #tab-client input[type="date"] {
+    display: none !important;
+  }
+  .print-date {
+    display: block !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    color: #111827 !important;
+    line-height: 1.35 !important;
+    padding: 0 !important;
+    margin: 0 0 2px 0 !important;
+    text-align: left !important;
+  }
+}
 textarea {
   min-height: 100px;
 }

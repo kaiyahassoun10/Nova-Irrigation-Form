@@ -491,6 +491,35 @@
   }
 
   // Bind client inputs
+  function formatDateForPrint(raw) {
+    if (!raw) return "";
+    const parts = raw.split("-");
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      if (!isNaN(m) && !isNaN(d)) {
+        const months = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const mm = months[m - 1] || "";
+        return mm ? `${mm} ${d}, ${y}` : raw;
+      }
+    }
+    return raw;
+  }
+
   [
     "jobName",
     "jobNumber",
@@ -507,16 +536,37 @@
     const el = $("#" + id);
     if (el) {
       el.value = state.client[id] || "";
+      const syncPrintDate = () => {
+        if (id !== "date") return;
+        const span = $("#datePrintValue");
+        if (span) span.textContent = formatDateForPrint(el.value || "");
+      };
+      syncPrintDate();
       el.addEventListener("input", () => {
         state.client[id] = el.value;
         saveAll();
+        syncPrintDate();
       });
       el.addEventListener("change", () => {
         state.client[id] = el.value;
         saveAll();
+        syncPrintDate();
       });
     }
   });
+
+  // Ensure date text is up-to-date right before print (helps mobile)
+  const syncPrintDateOnce = () => {
+    const span = $("#datePrintValue");
+    if (span && state.client) {
+      span.textContent = formatDateForPrint(state.client.date || "");
+    }
+  };
+  try {
+    window.addEventListener("beforeprint", syncPrintDateOnce);
+    const mq = window.matchMedia && window.matchMedia("print");
+    if (mq && mq.addListener) mq.addListener(syncPrintDateOnce);
+  } catch (_) {}
 
   // Catalog UI
   const catalogList = $("#catalogList");
