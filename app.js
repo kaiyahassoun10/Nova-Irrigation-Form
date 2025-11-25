@@ -509,8 +509,8 @@
       el.value = state.client[id] || "";
       const syncPrintDate = () => {
         const span = $("#datePrintValue");
-        if (span && id === "date") {
-          const raw = el.value || "";
+        if (span) {
+          const raw = (id === "date" ? el.value : state.client.date) || "";
           let pretty = raw;
           const d = raw ? new Date(raw) : null;
           if (d && !isNaN(d.getTime())) {
@@ -536,6 +536,27 @@
       });
     }
   });
+
+  // Ensure date is synced right before printing (helps iPad/Chrome)
+  const syncPrintDateOnce = () => {
+    const span = $("#datePrintValue");
+    const raw = (state.client && state.client.date) || "";
+    let pretty = raw;
+    const d = raw ? new Date(raw) : null;
+    if (d && !isNaN(d.getTime())) {
+      pretty = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    if (span) span.textContent = pretty;
+  };
+  try {
+    window.addEventListener("beforeprint", syncPrintDateOnce);
+    const mq = window.matchMedia && window.matchMedia("print");
+    if (mq && mq.addListener) mq.addListener(syncPrintDateOnce);
+  } catch (_) {}
 
   // Catalog UI
   const catalogList = $("#catalogList");
