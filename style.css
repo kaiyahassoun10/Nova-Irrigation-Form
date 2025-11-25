@@ -424,7 +424,7 @@ th.num {
 /* Page size + margins for the PDF */
 @page {
   size: Letter;
-  margin: 12mm 10mm;
+  margin: 10mm;
 }
 
 @media print {
@@ -437,6 +437,8 @@ th.num {
     color: #111827 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    height: auto !important;
+    min-height: 0 !important;
   }
 
   /* Stretch main content so it doesn't sit in a skinny column */
@@ -447,7 +449,7 @@ th.num {
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
-    padding: 12mm 10mm 12mm 10mm !important; /* keep light padding without forcing extra page space */
+    padding: 10mm !important; /* keep light padding without forcing extra page space */
   }
 
   /* Hide UI stuff: tabs, buttons, export tab, etc. */
@@ -473,14 +475,14 @@ th.num {
     page-break-before: auto;
     break-before: auto;
     margin: 6mm auto 10mm auto;
-    width: 90%;
-    max-width: 900px;
+    width: 100%;
+    max-width: 100%;
     min-height: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 0 4mm;
   }
 
   #grandTotalPrintTop {
@@ -632,7 +634,8 @@ th.num {
     border-radius: 10px !important;
     padding: 6px 8px !important;
     margin: 8px 0 !important;
-    page-break-inside: avoid;
+    page-break-inside: auto;
+    break-inside: auto;
     width: 100% !important;
   }
 

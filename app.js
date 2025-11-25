@@ -317,6 +317,29 @@
       reader.readAsDataURL(file);
     });
   }
+  function readAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result || ""));
+      fr.onerror = () => reject(new Error("read-error"));
+      fr.readAsDataURL(file);
+    });
+  }
+  const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
+  async function processImageFile(file) {
+    if (!file) return null;
+    try {
+      // iOS camera/photos can choke on canvas conversion; keep the raw data there.
+      if (isIOS) return await readAsDataURL(file);
+      return await resizeImageFile(file);
+    } catch (_) {
+      try {
+        return await readAsDataURL(file);
+      } catch (_) {
+        return null;
+      }
+    }
+  }
 
   // Tabs
   const tabs = $$(".tab");
@@ -740,30 +763,25 @@
           renderStations();
         });
       const photoInput = wrap.querySelector('[data-act="photoInput"]');
-      photoInput.addEventListener("change", (e) => {
-        const files = Array.from(e.target.files || []);
-        if (!files.length) return;
-        Promise.all(
-          files.map((f) =>
-            resizeImageFile(f).catch(() =>
-              new Promise((resolve, reject) => {
-                const fr = new FileReader();
-                fr.onload = () => resolve(String(fr.result || ""));
-                fr.onerror = () => reject(new Error("read-error"));
-                fr.readAsDataURL(f);
-              }).catch(() => null)
-            )
-          )
-        )
-          .then((imgs) => {
-            imgs.filter(Boolean).forEach((data) => st.photos.push(data));
-            saveAll();
-            renderStations();
-          })
-          .catch(() => {
-            // if everything failed, keep state as-is
-          });
-      });
+      if (photoInput) {
+        photoInput.addEventListener("change", (e) => {
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          Promise.all(files.map((f) => processImageFile(f)))
+            .then((imgs) => {
+              imgs.filter(Boolean).forEach((data) => st.photos.push(data));
+              saveAll();
+              renderStations();
+            })
+            .catch(() => {
+              // keep state as-is on failure
+            })
+            .finally(() => {
+              // allow picking the same file again on iOS
+              e.target.value = "";
+            });
+        });
+      }
       wrap.querySelectorAll('[data-act="removePhoto"]').forEach((btn) => {
         btn.addEventListener("click", () => {
           const idx = Number(btn.dataset.photoIdx);
