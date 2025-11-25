@@ -624,6 +624,13 @@ th.num {
     -webkit-appearance: none !important;
     appearance: none !important;
     min-width: 0 !important;
+    text-align: left !important;
+  }
+  #tab-client input[type="date"]::-webkit-datetime-edit,
+  #tab-client input[type="date"]::-webkit-date-and-time-value {
+    text-align: left !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   /* Notes area */
