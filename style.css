@@ -156,22 +156,21 @@ textarea::placeholder{
 }
 /* Hide native date/arrow icons */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  display: none;
-}
-input[type="date"]::-webkit-inner-spin-button,
-input[type="date"]::-webkit-clear-button,
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button,
-select::-ms-expand {
-  display: none;
+  opacity: 1;
+  display: inline-block;
+  cursor: pointer;
 }
 input[type="date"],
 input[type="number"],
 select {
-  -moz-appearance: textfield;
-  -webkit-appearance: none;
-  appearance: none;
+  -moz-appearance: auto;
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button,
+select::-ms-expand {
+  display: none;
 }
 textarea {
   min-height: 100px;
@@ -620,27 +619,11 @@ th.num {
   }
 
   /* Keep the Date field aligned when printing on iOS/Android */
-  #tab-client input[type="date"] {
-    display: none !important;
-  }
-  .print-date {
-    display: none;
-  }
   @media print {
     #tab-client .grid-2 > div {
       display: flex !important;
       flex-direction: column !important;
       align-items: flex-start !important;
-    }
-    .print-date {
-      display: block !important;
-      width: 100% !important;
-      font-size: 11px !important;
-      color: #111827 !important;
-      line-height: 1.35 !important;
-      padding: 0 !important;
-      margin: 0 0 2px 0 !important;
-      text-align: left !important;
     }
   }
 
