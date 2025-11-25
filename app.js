@@ -494,30 +494,27 @@
   function formatDateForPrint(raw) {
     if (!raw) return "";
     const parts = raw.split("-");
-    if (parts.length === 3) {
-      const y = parts[0];
-      const m = parseInt(parts[1], 10);
-      const d = parseInt(parts[2], 10);
-      if (!isNaN(m) && !isNaN(d)) {
-        const months = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        const mm = months[m - 1] || "";
-        return mm ? `${mm} ${d}, ${y}` : raw;
-      }
-    }
-    return raw;
+    if (parts.length !== 3) return raw;
+    const y = parts[0];
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    if (isNaN(m) || isNaN(d)) return raw;
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const mm = months[m - 1] || "";
+    return mm ? `${mm} ${d}, ${y}` : raw;
   }
 
   [

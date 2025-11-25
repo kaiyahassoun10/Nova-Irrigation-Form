@@ -175,7 +175,7 @@ select::-ms-expand {
 
 /* Print-only date text (shown instead of the date input to avoid browser formatting quirks) */
 .print-date {
-  display: none;
+  display: none !important;
 }
 @media print {
   #tab-client .grid-2 > div {
