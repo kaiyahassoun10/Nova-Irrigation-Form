@@ -656,7 +656,7 @@
             </div>
             <div class="row no-print" style="margin:6px 0; gap:6px; flex-wrap:wrap;">
               <button class="btn" data-act="photoLibrary">Add Photo</button>
-              <button class="btn ghost" data-act="photoCamera">Use Camera</button>
+              ${isIOS ? '<button class="btn ghost" data-act="photoCamera">Use Camera</button>' : ""}
             </div>
             <input type="file" accept="image/*" data-act="photoInput" multiple style="display:none" />
             <div style="margin-top:8px">
