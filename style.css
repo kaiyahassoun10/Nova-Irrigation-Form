@@ -64,10 +64,7 @@ header {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: whitesmoke;
-<<<<<<< ours
   font-weight: 800;
-=======
->>>>>>> theirs
 }
 .brand-subtitle {
   margin: 4px 0 0;
@@ -450,7 +447,7 @@ th.num {
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
-    padding: 14mm 14mm 14mm 28mm !important; /* balanced top/bottom, extra left */
+    padding: 12mm 10mm 12mm 10mm !important; /* keep light padding without forcing extra page space */
   }
 
   /* Hide UI stuff: tabs, buttons, export tab, etc. */
@@ -473,12 +470,12 @@ th.num {
 
   /* Stations start on a new page and are centered on each page */
   #tab-stations {
-    page-break-before: always;
-    break-before: always;
+    page-break-before: auto;
+    break-before: auto;
     margin: 6mm auto 10mm auto;
     width: 90%;
     max-width: 900px;
-    min-height: 70vh;
+    min-height: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -504,7 +501,7 @@ th.num {
     justify-content: center;
     width: 90%;
     max-width: 900px;
-    min-height: 70vh;
+    min-height: auto;
     margin: 0 auto 10mm auto;
     padding: 0;
     text-align: left;
