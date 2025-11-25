@@ -472,8 +472,8 @@ th.num {
 
   /* Stations start on a new page and are centered on each page */
   #tab-stations {
-    page-break-before: always;
-    break-before: always;
+    page-break-before: auto;
+    break-before: auto;
     margin: 6mm auto 10mm auto;
     width: 90%;
     max-width: 900px;
@@ -506,6 +506,8 @@ th.num {
     text-align: left;
     page-break-after: always;
     break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   /* Swap totals for print: use top total, hide bottom */
@@ -515,6 +517,7 @@ th.num {
   #grandTotalPrintTop {
     display: block !important;
     margin-bottom: 4mm !important;
+    page-break-after: avoid;
   }
   .print-divider {
     display: block !important;
