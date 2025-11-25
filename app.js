@@ -654,7 +654,11 @@
                   : '<div class="photo-box">No photos</div>'
               }
             </div>
-            <input type="file" accept="image/*" capture="environment" data-act="photoInput" multiple />
+            <div class="row no-print" style="margin:6px 0; gap:6px; flex-wrap:wrap;">
+              <button class="btn" data-act="photoLibrary">Add Photo</button>
+              <button class="btn ghost" data-act="photoCamera">Use Camera</button>
+            </div>
+            <input type="file" accept="image/*" data-act="photoInput" multiple style="display:none" />
             <div style="margin-top:8px">
               <label>Notes</label>
               <textarea data-k="notes">${escapeHtml(st.notes || "")}</textarea>
@@ -763,7 +767,29 @@
           renderStations();
         });
       const photoInput = wrap.querySelector('[data-act="photoInput"]');
+      const photoLibraryBtn = wrap.querySelector('[data-act="photoLibrary"]');
+      const photoCameraBtn = wrap.querySelector('[data-act="photoCamera"]');
       if (photoInput) {
+        const triggerPicker = (mode) => {
+          try {
+            if (mode === "camera") {
+              photoInput.setAttribute("capture", "environment");
+            } else {
+              photoInput.removeAttribute("capture");
+            }
+            photoInput.click();
+          } catch (_) {}
+        };
+        if (photoLibraryBtn)
+          photoLibraryBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            triggerPicker("library");
+          });
+        if (photoCameraBtn)
+          photoCameraBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            triggerPicker("camera");
+          });
         photoInput.addEventListener("change", (e) => {
           const files = Array.from(e.target.files || []);
           if (!files.length) return;
@@ -777,8 +803,9 @@
               // keep state as-is on failure
             })
             .finally(() => {
-              // allow picking the same file again on iOS
+              // allow picking the same file again on iOS and reset to neutral
               e.target.value = "";
+              photoInput.removeAttribute("capture");
             });
         });
       }
