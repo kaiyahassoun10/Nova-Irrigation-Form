@@ -627,6 +627,11 @@ th.num {
     display: none;
   }
   @media print {
+    #tab-client .grid-2 > div {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+    }
     .print-date {
       display: block !important;
       width: 100% !important;
@@ -635,6 +640,7 @@ th.num {
       line-height: 1.35 !important;
       padding: 0 !important;
       margin: 0 0 2px 0 !important;
+      text-align: left !important;
     }
   }
 
