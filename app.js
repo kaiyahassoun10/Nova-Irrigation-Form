@@ -510,7 +510,17 @@
       const syncPrintDate = () => {
         const span = $("#datePrintValue");
         if (span && id === "date") {
-          span.textContent = el.value || "";
+          const raw = el.value || "";
+          let pretty = raw;
+          const d = raw ? new Date(raw) : null;
+          if (d && !isNaN(d.getTime())) {
+            pretty = d.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
+          }
+          span.textContent = pretty;
         }
       };
       syncPrintDate();
