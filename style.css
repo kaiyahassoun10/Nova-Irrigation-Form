@@ -614,6 +614,16 @@ th.num {
     font-size: 11px !important;
     color: #111827 !important;
     box-shadow: none !important;
+    display: block !important;
+    width: 100% !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Keep the Date field aligned when printing on iOS/Android */
+  #tab-client input[type="date"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    min-width: 0 !important;
   }
 
   /* Notes area */
