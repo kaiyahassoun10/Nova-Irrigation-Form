@@ -621,16 +621,21 @@ th.num {
 
   /* Keep the Date field aligned when printing on iOS/Android */
   #tab-client input[type="date"] {
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    min-width: 0 !important;
-    text-align: left !important;
+    display: none !important;
   }
-  #tab-client input[type="date"]::-webkit-datetime-edit,
-  #tab-client input[type="date"]::-webkit-date-and-time-value {
-    text-align: left !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  .print-date {
+    display: none;
+  }
+  @media print {
+    .print-date {
+      display: block !important;
+      width: 100% !important;
+      font-size: 11px !important;
+      color: #111827 !important;
+      line-height: 1.35 !important;
+      padding: 0 !important;
+      margin: 0 0 2px 0 !important;
+    }
   }
 
   /* Notes area */

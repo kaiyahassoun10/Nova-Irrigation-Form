@@ -507,13 +507,22 @@
     const el = $("#" + id);
     if (el) {
       el.value = state.client[id] || "";
+      const syncPrintDate = () => {
+        const span = $("#datePrintValue");
+        if (span && id === "date") {
+          span.textContent = el.value || "";
+        }
+      };
+      syncPrintDate();
       el.addEventListener("input", () => {
         state.client[id] = el.value;
         saveAll();
+        syncPrintDate();
       });
       el.addEventListener("change", () => {
         state.client[id] = el.value;
         saveAll();
+        syncPrintDate();
       });
     }
   });
