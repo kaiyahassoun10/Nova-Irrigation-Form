@@ -284,6 +284,40 @@
     currency: "USD",
   });
 
+  // Downscale images to keep storage small
+  function resizeImageFile(file, maxSize = 900, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("read-error"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("img-error"));
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          if (w > maxSize || h > maxSize) {
+            const scale = Math.min(maxSize / w, maxSize / h);
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          try {
+            const dataUrl = canvas.toDataURL("image/jpeg", quality);
+            resolve(dataUrl);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Tabs
   const tabs = $$(".tab");
   const views = {
@@ -293,11 +327,43 @@
     clientCatalog: $("#tab-clientCatalog"),
     export: $("#tab-export"),
   };
+  const PIN_CODE = "5336";
+  const protectedTabs = ["catalog", "clientCatalog"];
+
+  // Reset PIN locks on each page load
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      protectedTabs.forEach((tab) =>
+        sessionStorage.removeItem("nova_pin_" + tab)
+      );
+    }
+  } catch (_) {}
+
+  const isPinUnlocked = (tab) =>
+    typeof sessionStorage !== "undefined" &&
+    sessionStorage.getItem("nova_pin_" + tab) === "1";
+
+  const requirePin = (tab) => {
+    if (!protectedTabs.includes(tab)) return true;
+    if (isPinUnlocked(tab)) return true;
+    const entered = window.prompt("Enter PIN to access this section:");
+    if (entered === null) return false;
+    if (entered.trim() === PIN_CODE) {
+      try {
+        sessionStorage.setItem("nova_pin_" + tab, "1");
+      } catch (_) {}
+      return true;
+    }
+    window.alert("Incorrect PIN.");
+    return false;
+  };
+
   tabs.forEach((btn) =>
     btn.addEventListener("click", () => {
+      const v = btn.dataset.tab;
+      if (!requirePin(v)) return;
       tabs.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      const v = btn.dataset.tab;
       Object.values(views).forEach((el) => el.classList.add("hidden"));
       views[v].classList.remove("hidden");
     })
@@ -320,28 +386,37 @@
     { id: "valve-replacement", label: "Valve Replacement", defaultPrice: 0 },
   ];
   const KEY = "nova_irrigation_form_v2";
-  let state = loadState() || {
-    client: {
-      jobName: "",
-      jobNumber: "",
-      clientName: "",
-      clientPhone: "",
-      address: "",
-      cityStateZip: "",
-      technician: "",
-      date: new Date().toISOString().slice(0, 10),
-      statusOfController: "",
-      statusOfBackflow: "",
-      notes: "",
-    },
-    stations: [], // {number, notes, photo, problems:[{label, qty, price}]}
-    catalog: loadCatalog(),
-  };
+  let state = loadState();
+  if (!state) {
+    state = {
+      client: {
+        jobName: "",
+        jobNumber: "",
+        clientName: "",
+        clientPhone: "",
+        address: "",
+        cityStateZip: "",
+        technician: "",
+        date: new Date().toISOString().slice(0, 10),
+        statusOfController: "",
+        statusOfBackflow: "",
+        notes: "",
+      },
+      stations: [],
+      catalog: loadCatalog(),
+    };
+  } else {
+    state.stations = normalizeStations(state.stations);
+  }
 
   function loadState() {
     try {
       const raw = localStorage.getItem(KEY);
-      return raw ? JSON.parse(raw) : null;
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === "object") {
+        parsed.stations = normalizeStations(parsed.stations);
+      }
+      return parsed;
     } catch (_) {
       return null;
     }
@@ -356,11 +431,40 @@
       return DEFAULT_CATALOG;
     }
   }
+  let saveWarningShown = false;
   function saveAll() {
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
       localStorage.setItem(KEY + "_catalog", JSON.stringify(state.catalog));
-    } catch (_) {}
+      return true;
+    } catch (err) {
+      if (!saveWarningShown) {
+        saveWarningShown = true;
+        window.alert(
+          "Save failed (likely storage limit). Try removing/reducing photos so notes and data persist."
+        );
+      }
+      return false;
+    }
+  }
+  function normalizeStations(list) {
+    return (list || []).map((s, idx) => {
+      const photos = Array.isArray(s.photos)
+        ? s.photos.filter(Boolean)
+        : s.photo
+        ? [s.photo]
+        : [];
+      return Object.assign(
+        {
+          number: idx + 1,
+          notes: "",
+          problems: [],
+          photos: [],
+        },
+        s,
+        { photos, photo: undefined, number: s.number || idx + 1 }
+      );
+    });
   }
 
   // Bind client inputs
@@ -452,7 +556,7 @@
     state.stations.push({
       number: nextNum,
       notes: "",
-      photo: null,
+      photos: [],
       problems: [],
     });
     saveAll();
@@ -468,9 +572,27 @@
   function grandTotal() {
     return (state.stations || []).reduce((t, st) => t + stationSubtotal(st), 0);
   }
+
+  function updateTotalsUI() {
+    const gt = fmt.format(grandTotal());
+    const gtMain = document.getElementById("grandTotal");
+    const gtTop = document.getElementById("grandTotalTop");
+    const gtClient = document.getElementById("grandTotalClientPrint");
+    const gtPrintTop = document.getElementById("grandTotalPrintTop");
+    if (gtMain) gtMain.textContent = "Grand Total: " + gt;
+    if (gtTop) gtTop.textContent = "Grand Total: " + gt;
+    if (gtClient) gtClient.textContent = "Grand Total: " + gt;
+    if (gtPrintTop) gtPrintTop.textContent = "Grand Total: " + gt;
+  }
   function renderStations() {
     stationsList.innerHTML = "";
     state.stations.forEach((st, si) => {
+      st.photos = Array.isArray(st.photos)
+        ? st.photos.filter(Boolean)
+        : st.photo
+        ? [st.photo]
+        : [];
+      st.photo = undefined;
       const wrap = document.createElement("div");
       wrap.className = "station";
       const total = fmt.format(stationSubtotal(st));
@@ -480,39 +602,48 @@
           <div class="subtotal">${total}</div>
         </div>
 
-        <div id="problems-${si}"></div>
-        <div class="row no-print" style="margin:8px 0">
-          ${
-            st.problems.length < 2
-              ? '<button class="btn" data-act="addProblem">Add Problem</button>'
-              : ""
-          }
-          <button class="btn ghost" data-act="removeStation">Remove Station</button>
-        </div>
-
-        <div class="row" style="margin-top:4px">
-          <div>
-            <label>Photo</label>
-            <div class="row">
+        <div class="station-body">
+          <div class="station-main">
+            <div id="problems-${si}"></div>
+            <div class="row no-print" style="margin:8px 0">
               ${
-                st.photo
-                  ? `<img class="photo" src="${st.photo}"/>`
-                  : '<div class="photo-box">No photo</div>'
-              }
-              <input type="file" accept="image/*" capture="environment" data-act="photoInput"/>
-              ${
-                st.photo
-                  ? '<button class="btn" data-act="removePhoto">Remove Photo</button>'
+                st.problems.length < 2
+                  ? '<button class="btn" data-act="addProblem">Add Problem</button>'
                   : ""
               }
+              <button class="btn ghost" data-act="removeStation">Remove Station</button>
             </div>
           </div>
-          <div style="flex:1">
-            <label>Notes</label>
-            <textarea data-k="notes">${escapeHtml(st.notes || "")}</textarea>
+          <div class="station-side">
+            <label>Photos</label>
+            <div class="photo-list">
+              ${
+                st.photos.length
+                  ? st.photos
+                      .map(
+                        (p, pi) => `
+                  <div class="photo-item">
+                    <img class="photo" src="${p}"/>
+                    <button class="btn ghost" data-act="removePhoto" data-photo-idx="${pi}">Remove</button>
+                  </div>`
+                      )
+                      .join("")
+                  : '<div class="photo-box">No photos</div>'
+              }
+            </div>
+            <input type="file" accept="image/*" capture="environment" data-act="photoInput" multiple />
+            <div style="margin-top:8px">
+              <label>Notes</label>
+              <textarea data-k="notes">${escapeHtml(st.notes || "")}</textarea>
+            </div>
           </div>
         </div>
       `;
+      const subtotalEl = wrap.querySelector(".subtotal");
+      const updateStationTotals = () => {
+        if (subtotalEl) subtotalEl.textContent = fmt.format(stationSubtotal(st));
+        updateTotalsUI();
+      };
       // Wire station actions
       const probsHost = wrap.querySelector("#problems-" + si);
       function renderProblems() {
@@ -539,11 +670,18 @@
             <div><label>Qty</label><input type="number" min="1" value="${
               Number(p.qty) || 1
             }" data-k="qty"></div>
-            <div><label>Price ($)</label><input type="number" min="0" step="0.01" value="${
-              Number(p.price) || 0
-            }" data-k="price"></div>
+            <div>
+              <label>Price ($)</label>
+              <div class="row no-print" style="gap:6px; align-items:center;">
+                <input type="number" min="0" step="0.01" value="${
+                  Number(p.price) || 0
+                }" data-k="price" style="flex:1">
+                <button class="btn ghost" data-act="removeProblem" data-problem-idx="${pi}">Remove</button>
+              </div>
+            </div>
           `;
           // Events
+          const priceInput = row.querySelector('[data-k="price"]');
           row
             .querySelector('[data-k="label"]')
             .addEventListener("change", (e) => {
@@ -551,21 +689,31 @@
               const def =
                 state.catalog.find((c) => c.label === p.label)?.defaultPrice ||
                 0;
-              if (!p.price || p.price === 0) {
-                p.price = def;
-              }
+              p.price = def;
+              if (priceInput) priceInput.value = def;
               saveAll();
-              renderStations();
+              updateStationTotals();
             });
           row.querySelector('[data-k="qty"]').addEventListener("input", (e) => {
             p.qty = Math.max(1, parseInt(e.target.value || "1", 10));
             saveAll();
-            renderStations();
+            updateStationTotals();
           });
           row
             .querySelector('[data-k="price"]')
             .addEventListener("input", (e) => {
               p.price = Math.max(0, parseFloat(e.target.value || "0"));
+              saveAll();
+              updateStationTotals();
+            });
+          row
+            .querySelector('[data-act="removeProblem"]')
+            .addEventListener("click", (e) => {
+              e.preventDefault();
+              st.problems.splice(pi, 1);
+              if (!st.problems.length) {
+                st.problems.push({ label: "", qty: 1, price: 0 });
+              }
               saveAll();
               renderStations();
             });
@@ -593,23 +741,39 @@
         });
       const photoInput = wrap.querySelector('[data-act="photoInput"]');
       photoInput.addEventListener("change", (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          st.photo = String(reader.result || "");
-          saveAll();
-          renderStations();
-        };
-        reader.readAsDataURL(f);
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        Promise.all(
+          files.map((f) =>
+            resizeImageFile(f).catch(() =>
+              new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(String(fr.result || ""));
+                fr.onerror = () => reject(new Error("read-error"));
+                fr.readAsDataURL(f);
+              }).catch(() => null)
+            )
+          )
+        )
+          .then((imgs) => {
+            imgs.filter(Boolean).forEach((data) => st.photos.push(data));
+            saveAll();
+            renderStations();
+          })
+          .catch(() => {
+            // if everything failed, keep state as-is
+          });
       });
-      const removePhotoBtn = wrap.querySelector('[data-act="removePhoto"]');
-      if (removePhotoBtn)
-        removePhotoBtn.addEventListener("click", () => {
-          st.photo = null;
-          saveAll();
-          renderStations();
+      wrap.querySelectorAll('[data-act="removePhoto"]').forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.photoIdx);
+          if (!Number.isNaN(idx)) {
+            st.photos.splice(idx, 1);
+            saveAll();
+            renderStations();
+          }
         });
+      });
       wrap.querySelector('[data-k="notes"]').addEventListener("input", (e) => {
         st.notes = e.target.value;
         saveAll();
@@ -617,9 +781,7 @@
 
       stationsList.appendChild(wrap);
     });
-    const gt = fmt.format(grandTotal());
-    $("#grandTotal").textContent = "Grand Total: " + gt;
-    $("#grandTotalTop").textContent = gt;
+    updateTotalsUI();
   }
   renderCatalog();
   renderStations();
@@ -647,6 +809,7 @@
             { client: state.client, stations: [], catalog: state.catalog },
             next
           );
+          state.stations = normalizeStations(state.stations);
           // rebind client inputs
           [
             "jobName",
