@@ -181,7 +181,8 @@ select::-ms-expand {
   #tab-client .grid-2 > div {
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-start !important;
+    align-items: stretch !important;
+    width: 100% !important;
   }
   #tab-client input[type="date"] {
     display: none !important;
@@ -195,6 +196,7 @@ select::-ms-expand {
     padding: 0 !important;
     margin: 0 0 2px 0 !important;
     text-align: left !important;
+    align-self: stretch !important;
   }
 }
 textarea {
