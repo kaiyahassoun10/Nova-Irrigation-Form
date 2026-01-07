@@ -502,7 +502,7 @@ th.num {
   #tab-stations {
     page-break-before: auto;
     break-before: auto;
-    margin: 2mm auto 4mm auto;
+    margin: 2mm auto 0 auto;
     width: 100%;
     max-width: 900px;
     min-height: auto;
@@ -510,7 +510,6 @@ th.num {
     padding: 0;
     page-break-after: auto;
     break-after: auto;
-    break-after: avoid-page;
   }
 
   #grandTotalPrintTop {
@@ -568,7 +567,7 @@ th.num {
     border: none !important;
     border-radius: 0 !important;
     padding: 0 !important;
-    margin: 0 0 10px 0 !important;
+    margin: 0 !important;
   }
 
   /* ---------- HEADER (LOGO + TITLE) ---------- */
@@ -725,11 +724,23 @@ th.num {
   /* Station photo + notes: more compact */
   .station .photo img,
   .station .photo-box {
-    width: 100px !important;
-    height: 100px !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
+  }
+
+  .photo-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .photo-item,
+  .photo-box {
+    flex: 0 0 calc(25% - 4px) !important;
   }
 
   .station textarea {
