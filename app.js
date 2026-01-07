@@ -326,6 +326,65 @@
     });
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
+
+  const IDB_DB = "nova-irrigation";
+  const IDB_STORE = "photos";
+  let idbReady = null;
+  const idbCache = new Map();
+
+  function openIdb() {
+    if (idbReady) return idbReady;
+    idbReady = new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_DB, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error("idb-open-failed"));
+    });
+    return idbReady;
+  }
+
+  async function idbPut(id, value) {
+    const db = await openIdb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.put(value, id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error || new Error("idb-put-failed"));
+    });
+  }
+
+  async function idbGet(id) {
+    if (idbCache.has(id)) return idbCache.get(id);
+    const db = await openIdb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.get(id);
+      req.onsuccess = () => {
+        idbCache.set(id, req.result || null);
+        resolve(req.result || null);
+      };
+      req.onerror = () => reject(req.error || new Error("idb-get-failed"));
+    });
+  }
+
+  async function idbDelete(id) {
+    idbCache.delete(id);
+    const db = await openIdb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error || new Error("idb-del-failed"));
+    });
+  }
   const compressToLimit = async (file, maxBytes) => {
     const attempts = [
       { size: 900, quality: 0.7 },
@@ -341,21 +400,32 @@
     return dataUrl;
   };
 
+  async function storePhotoData(dataUrl) {
+    const id = "p_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    await idbPut(id, dataUrl);
+    idbCache.set(id, dataUrl);
+    return "idb:" + id;
+  }
+
   async function processImageFile(file) {
     if (!file) return null;
     try {
       // Keep prints reliable on iOS by downscaling when possible; fall back to raw.
       if (isIOS) {
         try {
-          return await compressToLimit(file, 1_800_000);
+          const dataUrl = await compressToLimit(file, 1_800_000);
+          return dataUrl ? await storePhotoData(dataUrl) : null;
         } catch (_) {
-          return await readAsDataURL(file);
+          const dataUrl = await readAsDataURL(file);
+          return dataUrl ? await storePhotoData(dataUrl) : null;
         }
       }
-      return await resizeImageFile(file);
+      const dataUrl = await resizeImageFile(file);
+      return dataUrl ? await storePhotoData(dataUrl) : null;
     } catch (_) {
       try {
-        return await readAsDataURL(file);
+        const dataUrl = await readAsDataURL(file);
+        return dataUrl ? await storePhotoData(dataUrl) : null;
       } catch (_) {
         return null;
       }
@@ -520,6 +590,29 @@
         { photos, photo: undefined, number: s.number || idx + 1 }
       );
     });
+  }
+
+  async function migratePhotosToIdb() {
+    let changed = false;
+    for (let i = 0; i < (state.stations || []).length; i++) {
+      const st = state.stations[i];
+      if (!st || !Array.isArray(st.photos)) continue;
+      for (let j = 0; j < st.photos.length; j++) {
+        const ref = String(st.photos[j] || "");
+        if (ref.startsWith("idb:")) continue;
+        if (ref.startsWith("data:")) {
+          try {
+            const idRef = await storePhotoData(ref);
+            st.photos[j] = idRef;
+            changed = true;
+          } catch (_) {}
+        }
+      }
+    }
+    if (changed) {
+      saveAll();
+      renderStations();
+    }
   }
 
   // Bind client inputs
@@ -730,7 +823,7 @@
                       .map(
                         (p, pi) => `
                   <div class="photo-item">
-                    <img class="photo" src="${p}"/>
+                    <img class="photo" data-photo="${p}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" />
                     <button class="btn ghost" data-act="removePhoto" data-photo-idx="${pi}">Remove</button>
                   </div>`
                       )
@@ -897,7 +990,10 @@
         btn.addEventListener("click", () => {
           const idx = Number(btn.dataset.photoIdx);
           if (!Number.isNaN(idx)) {
-            st.photos.splice(idx, 1);
+            const removed = st.photos.splice(idx, 1)[0];
+            if (removed && String(removed).startsWith("idb:")) {
+              idbDelete(String(removed).slice(4)).catch(() => {});
+            }
             saveAll();
             renderStations();
           }
@@ -909,11 +1005,30 @@
       });
 
       stationsList.appendChild(wrap);
+      hydratePhotos(wrap).catch(() => {});
     });
     updateTotalsUI();
   }
+
+  async function hydratePhotos(root) {
+    const imgs = Array.from(
+      root.querySelectorAll("img.photo[data-photo]")
+    );
+    await Promise.all(
+      imgs.map(async (img) => {
+        const ref = img.getAttribute("data-photo") || "";
+        if (ref.startsWith("idb:")) {
+          const dataUrl = await idbGet(ref.slice(4));
+          if (dataUrl) img.src = dataUrl;
+        } else {
+          img.src = ref;
+        }
+      })
+    );
+  }
   renderCatalog();
   renderStations();
+  migratePhotosToIdb();
 
   // Export / Backup
   $("#saveJson").addEventListener("click", () => {
