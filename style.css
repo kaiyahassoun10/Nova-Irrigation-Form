@@ -755,6 +755,16 @@ th.num {
   }
 
   @media print and (min-width: 481px) {
+    #grandTotalPrintTop {
+      display: block !important;
+      margin-bottom: 2mm !important;
+      font-size: 10px !important;
+      line-height: 1.2 !important;
+    }
+    .print-divider {
+      display: block !important;
+      margin: 0 0 2mm 0 !important;
+    }
     .photo-list {
       gap: 4px !important;
       padding: 0 !important;
