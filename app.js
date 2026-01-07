@@ -326,7 +326,6 @@
     });
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
-  const isIPad = /iPad/i.test(navigator.userAgent || "");
 
   const IDB_DB = "nova-irrigation";
   const IDB_STORE = "photos";
@@ -685,47 +684,12 @@
       span.textContent = formatDateForPrint(state.client.date || "");
     }
   };
-  // Fix iOS Safari zoom sticking after print preview
-  const resetIosViewportAfterPrint = () => {
-    if (!isIOS) return;
-    const meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) return;
-    const original = meta.getAttribute("content") || "";
-    const squeeze = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
-    const restore = () => meta.setAttribute("content", original);
-    meta.setAttribute("content", squeeze);
-    // Force a relayout to shake iOS out of the print zoom
-    document.documentElement.style.transform = "scale(1)";
-    document.documentElement.style.transformOrigin = "0 0";
-    requestAnimationFrame(() => {
-      document.documentElement.style.transform = "";
-      document.documentElement.style.transformOrigin = "";
-    });
-    setTimeout(restore, 0);
-    setTimeout(restore, 400);
-    setTimeout(restore, 1000);
-  };
-  const reloadAfterPrintOnIpad = () => {
-    if (!isIPad) return;
-    setTimeout(() => {
-      window.location.reload();
-    }, 300);
-  };
   try {
-    window.addEventListener("beforeprint", () => {
-      syncPrintDateOnce();
-      resetIosViewportAfterPrint();
-    });
-    window.addEventListener("afterprint", () => {
-      resetIosViewportAfterPrint();
-      reloadAfterPrintOnIpad();
-    });
+    window.addEventListener("beforeprint", syncPrintDateOnce);
     const mq = window.matchMedia && window.matchMedia("print");
     if (mq && mq.addListener) {
       mq.addListener((e) => {
         if (e.matches) syncPrintDateOnce();
-        resetIosViewportAfterPrint();
-        if (!e.matches) reloadAfterPrintOnIpad();
       });
     }
   } catch (_) {}
