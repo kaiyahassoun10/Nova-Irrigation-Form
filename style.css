@@ -459,6 +459,9 @@ th.num {
 }
 
 @media print {
+  .print-only {
+    display: block !important;
+  }
   .print-totals-row {
     display: flex !important;
     width: 100% !important;
