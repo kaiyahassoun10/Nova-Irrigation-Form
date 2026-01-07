@@ -329,8 +329,14 @@
   async function processImageFile(file) {
     if (!file) return null;
     try {
-      // iOS camera/photos can choke on canvas conversion; keep the raw data there.
-      if (isIOS) return await readAsDataURL(file);
+      // Keep prints reliable on iOS by downscaling when possible; fall back to raw.
+      if (isIOS) {
+        try {
+          return await resizeImageFile(file, 1200, 0.8);
+        } catch (_) {
+          return await readAsDataURL(file);
+        }
+      }
       return await resizeImageFile(file);
     } catch (_) {
       try {

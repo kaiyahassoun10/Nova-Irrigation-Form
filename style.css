@@ -804,6 +804,16 @@ th.num {
     flex: 0 0 calc(25% - 2px) !important;
   }
 
+  .photo-list {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  .photo-item,
+  .photo-box {
+    width: 100% !important;
+  }
+
   @media print and (min-width: 481px) {
     #grandTotalPrintTop {
       display: block !important;
