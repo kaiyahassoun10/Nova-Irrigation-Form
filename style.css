@@ -761,12 +761,12 @@ th.num {
 
   @media print and (min-width: 900px) {
     .photo-list {
-      margin: 0 -2px !important;
-      gap: 3px !important;
+      margin: 0 -6px !important;
+      gap: 2px !important;
     }
     .photo-item,
     .photo-box {
-      flex: 0 0 calc(25% - 3px) !important;
+      flex: 0 0 calc(25% - 2px) !important;
     }
   }
 

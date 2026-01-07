@@ -624,7 +624,7 @@
   $("#addStationBtn").addEventListener("click", () => {
     const nextNum = state.stations.length + 1;
     state.stations.push({
-      number: nextNum,
+git      number: nextNum,
       notes: "",
       photos: [],
       problems: [],
