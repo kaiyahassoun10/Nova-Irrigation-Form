@@ -395,6 +395,9 @@ img.photo {
 .print-only {
   display: none;
 }
+.station-overflow-note {
+  display: none;
+}
 .print-divider {
   display: none;
 }
@@ -735,6 +738,18 @@ th.num {
     border-radius: 8px !important;
     min-height: 100px !important;
     width: 100% !important;
+  }
+
+  .station-overflow-note {
+    display: none !important;
+    font-size: 10px !important;
+    color: #6b7280 !important;
+    text-align: right !important;
+    margin-top: 4px !important;
+  }
+
+  .station.overflowing .station-overflow-note {
+    display: block !important;
   }
 
   /* Hide interactive station controls when printing */
