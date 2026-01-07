@@ -326,6 +326,7 @@
     });
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
+  const isIPad = /iPad/i.test(navigator.userAgent || "");
 
   const IDB_DB = "nova-irrigation";
   const IDB_STORE = "photos";
@@ -693,6 +694,48 @@
       });
     }
   } catch (_) {}
+
+  // iPad: show a manual "Reset Zoom" button after print preview
+  const zoomResetWrap = document.getElementById("zoomResetWrap");
+  const zoomResetBtn = document.getElementById("zoomResetBtn");
+  if (zoomResetWrap && zoomResetBtn) {
+    if (!isIPad) {
+      zoomResetWrap.style.display = "none";
+    } else {
+      const showReset = () => {
+        zoomResetWrap.style.display = "flex";
+      };
+      const hideReset = () => {
+        zoomResetWrap.style.display = "none";
+      };
+      const doReset = () => {
+        const meta = document.querySelector('meta[name="viewport"]');
+        if (meta) {
+          const original = meta.getAttribute("content") || "";
+          meta.setAttribute(
+            "content",
+            "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+          );
+          setTimeout(() => meta.setAttribute("content", original), 200);
+        }
+        document.documentElement.style.transform = "scale(1)";
+        document.documentElement.style.transformOrigin = "0 0";
+        requestAnimationFrame(() => {
+          document.documentElement.style.transform = "";
+          document.documentElement.style.transformOrigin = "";
+        });
+        setTimeout(hideReset, 200);
+      };
+      zoomResetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        doReset();
+      });
+      window.addEventListener("afterprint", showReset);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") showReset();
+      });
+    }
+  }
 
   // Catalog UI
   const catalogList = $("#catalogList");
