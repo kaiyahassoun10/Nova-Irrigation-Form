@@ -426,6 +426,9 @@ img.photo {
 .print-only {
   display: none;
 }
+.print-preview .print-only {
+  display: block !important;
+}
 .print-totals-row {
   display: none;
 }
