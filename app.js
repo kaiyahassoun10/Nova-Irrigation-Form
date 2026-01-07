@@ -326,13 +326,28 @@
     });
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
+  const compressToLimit = async (file, maxBytes) => {
+    const attempts = [
+      { size: 900, quality: 0.7 },
+      { size: 700, quality: 0.6 },
+      { size: 600, quality: 0.5 },
+    ];
+    let dataUrl = null;
+    for (let i = 0; i < attempts.length; i++) {
+      const a = attempts[i];
+      dataUrl = await resizeImageFile(file, a.size, a.quality);
+      if (dataUrl && dataUrl.length <= maxBytes) break;
+    }
+    return dataUrl;
+  };
+
   async function processImageFile(file) {
     if (!file) return null;
     try {
       // Keep prints reliable on iOS by downscaling when possible; fall back to raw.
       if (isIOS) {
         try {
-          return await resizeImageFile(file, 1200, 0.8);
+          return await compressToLimit(file, 1_800_000);
         } catch (_) {
           return await readAsDataURL(file);
         }
