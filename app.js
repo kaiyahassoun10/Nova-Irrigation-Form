@@ -327,6 +327,7 @@
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
   const isIPad = /iPad/i.test(navigator.userAgent || "");
+  let printInProgress = false;
 
   const IDB_DB = "nova-irrigation";
   const IDB_STORE = "photos";
@@ -711,20 +712,33 @@
       window.location.reload();
     }, 300);
   };
+  const handlePrintReturn = () => {
+    if (!isIPad || !printInProgress) return;
+    printInProgress = false;
+    reloadAfterPrintOnIpad();
+  };
   try {
     window.addEventListener("beforeprint", () => {
       syncPrintDateOnce();
       resetIosViewportAfterPrint();
+      if (isIPad) printInProgress = true;
     });
     window.addEventListener("afterprint", () => {
       resetIosViewportAfterPrint();
       reloadAfterPrintOnIpad();
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") handlePrintReturn();
+    });
+    window.addEventListener("pageshow", () => {
+      handlePrintReturn();
     });
     const mq = window.matchMedia && window.matchMedia("print");
     if (mq && mq.addListener) {
       mq.addListener((e) => {
         if (e.matches) syncPrintDateOnce();
         resetIosViewportAfterPrint();
+        if (isIPad) printInProgress = true;
         if (!e.matches) reloadAfterPrintOnIpad();
       });
     }
