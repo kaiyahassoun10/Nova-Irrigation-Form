@@ -750,12 +750,12 @@ th.num {
 
   @media print and (min-width: 481px) {
     .photo-list {
-      gap: 6px !important;
-      padding: 0 2px !important;
+      gap: 4px !important;
+      padding: 0 !important;
     }
     .photo-item,
     .photo-box {
-      flex: 0 0 calc(25% - 6px) !important;
+      flex: 0 0 calc(25% - 4px) !important;
     }
   }
 
