@@ -559,60 +559,10 @@
       span.textContent = formatDateForPrint(state.client.date || "");
     }
   };
-
-  const measurePx = (cssValue) => {
-    const probe = document.createElement("div");
-    probe.style.position = "absolute";
-    probe.style.visibility = "hidden";
-    probe.style.height = cssValue;
-    probe.style.width = cssValue;
-    document.body.appendChild(probe);
-    const px = probe.getBoundingClientRect().height || 0;
-    document.body.removeChild(probe);
-    return px;
-  };
-
-  const updateOverflowNotes = () => {
-    const list = $("#stationsList");
-    if (!list) return;
-    const stations = qsa(".station");
-    stations.forEach((st) => st.classList.remove("overflowing"));
-    if (!stations.length) return;
-    const pageHeight = measurePx("11in");
-    const pageMargin = measurePx("10mm");
-    const available = pageHeight - pageMargin * 2;
-    if (available <= 0) return;
-    const listTop = list.getBoundingClientRect().top + window.scrollY;
-    stations.forEach((st) => {
-      const rect = st.getBoundingClientRect();
-      const top = rect.top + window.scrollY - listTop;
-      const offset = top % available;
-      if (offset + rect.height > available + 1) {
-        st.classList.add("overflowing");
-      }
-    });
-  };
-
-  const clearOverflowNotes = () => {
-    qsa(".station").forEach((st) => st.classList.remove("overflowing"));
-  };
-
-  const prepareForPrint = () => {
-    syncPrintDateOnce();
-    setTimeout(updateOverflowNotes, 0);
-  };
-
   try {
-    window.addEventListener("beforeprint", prepareForPrint);
-    window.addEventListener("afterprint", clearOverflowNotes);
+    window.addEventListener("beforeprint", syncPrintDateOnce);
     const mq = window.matchMedia && window.matchMedia("print");
-    if (mq && mq.addListener) {
-      mq.addListener((e) => (e.matches ? prepareForPrint() : clearOverflowNotes()));
-    } else if (mq && mq.addEventListener) {
-      mq.addEventListener("change", (e) =>
-        e.matches ? prepareForPrint() : clearOverflowNotes()
-      );
-    }
+    if (mq && mq.addListener) mq.addListener(syncPrintDateOnce);
   } catch (_) {}
 
   // Catalog UI
@@ -762,7 +712,6 @@
             </div>
           </div>
         </div>
-        <div class="station-overflow-note">(see next station)</div>
       `;
       const subtotalEl = wrap.querySelector(".subtotal");
       const updateStationTotals = () => {
