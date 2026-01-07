@@ -392,9 +392,6 @@ img.photo {
   text-align: right;
   font-weight: 900;
 }
-#grandTotalTop::before {
-  content: "Grand Total: ";
-}
 .print-only {
   display: none;
 }
