@@ -475,14 +475,21 @@
     return false;
   };
 
+  const selectTab = (tab) => {
+    const target = views[tab];
+    if (!target) return;
+    if (!requirePin(tab)) return;
+    const btn = document.querySelector(`.tab[data-tab="${tab}"]`);
+    tabs.forEach((b) => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    Object.values(views).forEach((el) => el.classList.add("hidden"));
+    target.classList.remove("hidden");
+  };
+
   tabs.forEach((btn) =>
     btn.addEventListener("click", () => {
       const v = btn.dataset.tab;
-      if (!requirePin(v)) return;
-      tabs.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      Object.values(views).forEach((el) => el.classList.add("hidden"));
-      views[v].classList.remove("hidden");
+      selectTab(v);
     })
   );
   document.addEventListener("click", (e) => {
@@ -490,11 +497,7 @@
     if (!btn) return;
     const v = btn.dataset.tab;
     if (!v || !views[v]) return;
-    if (!requirePin(v)) return;
-    tabs.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    Object.values(views).forEach((el) => el.classList.add("hidden"));
-    views[v].classList.remove("hidden");
+    selectTab(v);
   });
 
   // Logo
@@ -711,7 +714,7 @@
     try {
       const active = document.querySelector(".tab.active");
       const tab = active ? active.getAttribute("data-tab") : "client";
-      sessionStorage.setItem(
+      localStorage.setItem(
         PRINT_RETURN_KEY,
         JSON.stringify({ tab, scrollY: window.scrollY })
       );
@@ -720,21 +723,12 @@
 
   const restoreReturnState = () => {
     try {
-      const raw = sessionStorage.getItem(PRINT_RETURN_KEY);
+      const raw = localStorage.getItem(PRINT_RETURN_KEY);
       if (!raw) return;
-      sessionStorage.removeItem(PRINT_RETURN_KEY);
+      localStorage.removeItem(PRINT_RETURN_KEY);
       const data = JSON.parse(raw);
       const tab = data && data.tab ? data.tab : "client";
-      const target = views[tab];
-      if (target) {
-        const btn = document.querySelector(`.tab[data-tab="${tab}"]`);
-        if (btn && requirePin(tab)) {
-          tabs.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          Object.values(views).forEach((el) => el.classList.add("hidden"));
-          target.classList.remove("hidden");
-        }
-      }
+      selectTab(tab);
       const y = data && typeof data.scrollY === "number" ? data.scrollY : 0;
       setTimeout(() => window.scrollTo(0, y), 0);
     } catch (_) {}
