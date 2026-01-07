@@ -327,6 +327,7 @@
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
   const isIPad = /iPad/i.test(navigator.userAgent || "");
+  const PRINT_RETURN_KEY = "nova.printReturn";
   let printInProgress = false;
 
   const IDB_DB = "nova-irrigation";
@@ -706,8 +707,42 @@
     setTimeout(restore, 400);
     setTimeout(restore, 1000);
   };
+  const saveReturnState = () => {
+    try {
+      const active = document.querySelector(".tab.active");
+      const tab = active ? active.getAttribute("data-tab") : "client";
+      sessionStorage.setItem(
+        PRINT_RETURN_KEY,
+        JSON.stringify({ tab, scrollY: window.scrollY })
+      );
+    } catch (_) {}
+  };
+
+  const restoreReturnState = () => {
+    try {
+      const raw = sessionStorage.getItem(PRINT_RETURN_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(PRINT_RETURN_KEY);
+      const data = JSON.parse(raw);
+      const tab = data && data.tab ? data.tab : "client";
+      const target = views[tab];
+      if (target) {
+        const btn = document.querySelector(`.tab[data-tab="${tab}"]`);
+        if (btn && requirePin(tab)) {
+          tabs.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          Object.values(views).forEach((el) => el.classList.add("hidden"));
+          target.classList.remove("hidden");
+        }
+      }
+      const y = data && typeof data.scrollY === "number" ? data.scrollY : 0;
+      setTimeout(() => window.scrollTo(0, y), 0);
+    } catch (_) {}
+  };
+
   const reloadAfterPrintOnIpad = () => {
     if (!isIPad) return;
+    saveReturnState();
     setTimeout(() => {
       window.location.reload();
     }, 300);
@@ -1083,6 +1118,7 @@
   renderCatalog();
   renderStations();
   migratePhotosToIdb();
+  restoreReturnState();
 
   // Export / Backup
   $("#saveJson").addEventListener("click", () => {
