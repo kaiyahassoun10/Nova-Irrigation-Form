@@ -179,6 +179,15 @@ select::-ms-expand {
   min-width: 0;
 }
 
+@media (max-width: 560px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  #tab-client input[type="date"] {
+    width: 100%;
+  }
+}
+
 /* Print-only date text (shown instead of the date input to avoid browser formatting quirks) */
 .print-date {
   display: none !important;
