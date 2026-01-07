@@ -759,6 +759,17 @@ th.num {
     }
   }
 
+  @media print and (min-width: 900px) {
+    .photo-list {
+      margin: 0 -2px !important;
+      gap: 3px !important;
+    }
+    .photo-item,
+    .photo-box {
+      flex: 0 0 calc(25% - 3px) !important;
+    }
+  }
+
   .station textarea {
     font-size: 10px !important;
     padding: 3px !important;
