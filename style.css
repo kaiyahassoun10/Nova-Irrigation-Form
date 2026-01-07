@@ -681,17 +681,6 @@ th.num {
     width: 100% !important;
     display: block !important;
   }
-  #stationsList {
-    display: block !important;
-  }
-  .station:nth-of-type(2n) {
-    page-break-after: always;
-    break-after: page;
-  }
-  .station:last-of-type {
-    page-break-after: auto;
-    break-after: auto;
-  }
 
   .station .flex-between {
     margin-bottom: 4px !important;
@@ -732,8 +721,8 @@ th.num {
   /* Station photo + notes: more compact */
   .station .photo img,
   .station .photo-box {
-    width: 96px !important;
-    height: 96px !important;
+    width: 120px !important;
+    height: 120px !important;
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
@@ -744,7 +733,7 @@ th.num {
     padding: 4px !important;
     background: #f9fafb !important;
     border-radius: 8px !important;
-    min-height: 72px !important;
+    min-height: 100px !important;
     width: 100% !important;
   }
 
