@@ -913,6 +913,14 @@ th.num {
     margin-bottom: 0 !important;
   }
 
+  .station-next-note {
+    margin-top: 4px !important;
+    text-align: right !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    color: #6b7280 !important;
+  }
+
   @media print and (max-width: 480px) {
     #grandTotalPrintTop {
       display: block !important;

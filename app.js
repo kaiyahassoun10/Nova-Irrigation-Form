@@ -791,6 +791,7 @@
   function renderStations() {
     stationsList.innerHTML = "";
     state.stations.forEach((st, si) => {
+      const isLastStation = si === state.stations.length - 1;
       st.photos = Array.isArray(st.photos)
         ? st.photos.filter(Boolean)
         : st.photo
@@ -846,6 +847,11 @@
             </div>
           </div>
         </div>
+        ${
+          !isLastStation
+            ? '<div class="station-next-note print-only">(See next station \u2193)</div>'
+            : ""
+        }
       `;
       const subtotalEl = wrap.querySelector(".subtotal");
       const updateStationTotals = () => {
