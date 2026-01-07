@@ -684,10 +684,36 @@
       span.textContent = formatDateForPrint(state.client.date || "");
     }
   };
+  // Fix iOS Safari zoom sticking after print preview
+  const resetIosViewportAfterPrint = () => {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    const original = meta.getAttribute("content") || "";
+    let restored = false;
+    const restore = () => {
+      if (restored) return;
+      restored = true;
+      meta.setAttribute("content", original);
+    };
+    if (isIOS) {
+      meta.setAttribute("content", "width=device-width, initial-scale=1");
+      setTimeout(restore, 0);
+      setTimeout(restore, 300);
+    }
+  };
   try {
-    window.addEventListener("beforeprint", syncPrintDateOnce);
+    window.addEventListener("beforeprint", () => {
+      syncPrintDateOnce();
+      resetIosViewportAfterPrint();
+    });
+    window.addEventListener("afterprint", resetIosViewportAfterPrint);
     const mq = window.matchMedia && window.matchMedia("print");
-    if (mq && mq.addListener) mq.addListener(syncPrintDateOnce);
+    if (mq && mq.addListener) {
+      mq.addListener((e) => {
+        if (e.matches) syncPrintDateOnce();
+        resetIosViewportAfterPrint();
+      });
+    }
   } catch (_) {}
 
   // Catalog UI
