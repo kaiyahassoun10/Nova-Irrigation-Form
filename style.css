@@ -405,9 +405,6 @@ img.photo {
   display: none;
 }
 
-#grandTotalTop::before {
-  content: "Grand Total: ";
-}
 
 .station .subtotal::before {
   content: "Subtotal: ";
@@ -478,10 +475,26 @@ th.num {
     text-align: right !important;
     font-weight: 800 !important;
     font-size: 10px !important;
-    background: #f3f4f6 !important;
+    background: #3b82f6 !important;
     border-radius: 9999px !important;
     padding: 2px 8px !important;
     display: inline-block !important;
+    color: #ffffff !important;
+  }
+  @supports (-webkit-touch-callout: none) {
+    .print-totals-row {
+      display: flex !important;
+    }
+    #totalStationsPrint,
+    #grandTotalPrintTop {
+      display: inline-block !important;
+      visibility: visible !important;
+    }
+    #grandTotalPrintTop {
+      color: #111827 !important;
+      background: #e5e7eb !important;
+      border: 1px solid #cbd5e1 !important;
+    }
   }
   /* Use full page, white background */
   html,
