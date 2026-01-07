@@ -662,7 +662,7 @@
     const gtPrintTop = document.getElementById("grandTotalPrintTop");
     const totalStationsPrint = document.getElementById("totalStationsPrint");
     if (gtMain) gtMain.textContent = "Grand Total: " + gt;
-    if (gtTop) gtTop.textContent = "Grand Total: " + gt;
+    if (gtTop) gtTop.textContent = gt;
     if (gtClient) gtClient.textContent = "Grand Total: " + gt;
     if (gtPrintTop) gtPrintTop.textContent = "Grand Total: " + gt;
     if (totalStationsPrint) {
