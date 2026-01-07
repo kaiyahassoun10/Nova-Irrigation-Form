@@ -391,6 +391,17 @@
       views[v].classList.remove("hidden");
     })
   );
+  document.addEventListener("click", (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest(".tab") : null;
+    if (!btn) return;
+    const v = btn.dataset.tab;
+    if (!v || !views[v]) return;
+    if (!requirePin(v)) return;
+    tabs.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    Object.values(views).forEach((el) => el.classList.add("hidden"));
+    views[v].classList.remove("hidden");
+  });
 
   // Logo
   $("#logo").src = BASE64_LOGO;
