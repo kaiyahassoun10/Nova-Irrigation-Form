@@ -198,6 +198,10 @@ select::-ms-expand {
   min-width: 0;
   width: 100%;
   max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  padding-right: 10px;
 }
 
 /* Print-only date text (shown instead of the date input to avoid browser formatting quirks) */
