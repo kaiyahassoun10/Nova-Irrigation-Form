@@ -660,10 +660,15 @@
     const gtTop = document.getElementById("grandTotalTop");
     const gtClient = document.getElementById("grandTotalClientPrint");
     const gtPrintTop = document.getElementById("grandTotalPrintTop");
+    const totalStationsPrint = document.getElementById("totalStationsPrint");
     if (gtMain) gtMain.textContent = "Grand Total: " + gt;
     if (gtTop) gtTop.textContent = "Grand Total: " + gt;
     if (gtClient) gtClient.textContent = "Grand Total: " + gt;
     if (gtPrintTop) gtPrintTop.textContent = "Grand Total: " + gt;
+    if (totalStationsPrint) {
+      const count = (state.stations || []).length;
+      totalStationsPrint.textContent = "TOTAL STATIONS: " + count;
+    }
   }
   function renderStations() {
     stationsList.innerHTML = "";

@@ -395,6 +395,9 @@ img.photo {
 .print-only {
   display: none;
 }
+.print-totals-row {
+  display: none;
+}
 .print-divider {
   display: none;
 }
@@ -456,6 +459,27 @@ th.num {
 }
 
 @media print {
+  .print-totals-row {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    gap: 8px !important;
+  }
+  #totalStationsPrint {
+    text-transform: uppercase !important;
+    text-align: left !important;
+    font-weight: 800 !important;
+  }
+  #grandTotalPrintTop {
+    text-align: right !important;
+    font-weight: 800 !important;
+    font-size: 10px !important;
+    background: #f3f4f6 !important;
+    border-radius: 9999px !important;
+    padding: 2px 8px !important;
+    display: inline-block !important;
+  }
   /* Use full page, white background */
   html,
   body {
@@ -522,6 +546,11 @@ th.num {
     margin-bottom: 2mm !important;
     font-size: 10px !important;
     line-height: 1.2 !important;
+    background: #3b82f6 !important;
+    border-radius: 9999px !important;
+    padding: 2px 8px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
   }
 
   /* Center first-page content with larger top spacing */
@@ -558,6 +587,11 @@ th.num {
     font-size: 10px !important;
     line-height: 1.2 !important;
     page-break-after: avoid;
+    background: #3b82f6 !important;
+    border-radius: 9999px !important;
+    padding: 2px 8px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
   }
   .print-divider {
     display: block !important;
@@ -760,6 +794,11 @@ th.num {
       margin-bottom: 2mm !important;
       font-size: 10px !important;
       line-height: 1.2 !important;
+    background: #3b82f6 !important;
+    border-radius: 9999px !important;
+    padding: 2px 8px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
     }
     .print-divider {
       display: block !important;
@@ -823,6 +862,11 @@ th.num {
       margin-bottom: 2mm !important;
       font-size: 9px !important;
       line-height: 1.2 !important;
+    background: #3b82f6 !important;
+    border-radius: 9999px !important;
+    padding: 2px 8px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
     }
     .print-divider {
       display: block !important;
