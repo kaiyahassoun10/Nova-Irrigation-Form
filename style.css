@@ -145,6 +145,7 @@ input[type="number"],
 textarea,
 select {
   width: 100%;
+  max-width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--bd);
   border-radius: 12px;
@@ -171,6 +172,11 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button,
 select::-ms-expand {
   display: none;
+}
+
+/* Prevent date input overflow on narrow screens */
+.grid-2 > div {
+  min-width: 0;
 }
 
 /* Print-only date text (shown instead of the date input to avoid browser formatting quirks) */
