@@ -686,20 +686,23 @@
   };
   // Fix iOS Safari zoom sticking after print preview
   const resetIosViewportAfterPrint = () => {
+    if (!isIOS) return;
     const meta = document.querySelector('meta[name="viewport"]');
     if (!meta) return;
     const original = meta.getAttribute("content") || "";
-    let restored = false;
-    const restore = () => {
-      if (restored) return;
-      restored = true;
-      meta.setAttribute("content", original);
-    };
-    if (isIOS) {
-      meta.setAttribute("content", "width=device-width, initial-scale=1");
-      setTimeout(restore, 0);
-      setTimeout(restore, 300);
-    }
+    const squeeze = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
+    const restore = () => meta.setAttribute("content", original);
+    meta.setAttribute("content", squeeze);
+    // Force a relayout to shake iOS out of the print zoom
+    document.documentElement.style.transform = "scale(1)";
+    document.documentElement.style.transformOrigin = "0 0";
+    requestAnimationFrame(() => {
+      document.documentElement.style.transform = "";
+      document.documentElement.style.transformOrigin = "";
+    });
+    setTimeout(restore, 0);
+    setTimeout(restore, 400);
+    setTimeout(restore, 1000);
   };
   try {
     window.addEventListener("beforeprint", () => {
