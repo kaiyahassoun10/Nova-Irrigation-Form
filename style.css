@@ -518,7 +518,10 @@ th.num {
   }
 
   #grandTotalPrintTop {
-    display: none !important;
+    display: block !important;
+    margin-bottom: 2mm !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
   }
 
   /* Center first-page content with larger top spacing */
@@ -550,14 +553,17 @@ th.num {
     display: none !important;
   }
   #grandTotalPrintTop {
-    display: none !important;
+    display: block !important;
+    margin-bottom: 2mm !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
     page-break-after: avoid;
   }
   .print-divider {
-    display: none !important;
+    display: block !important;
     width: 100%;
     border-top: 1px solid #e5e7eb;
-    margin: 0 0 6mm 0;
+    margin: 0 0 2mm 0;
   }
 
   /* Remove trailing divider area at end of stations */
@@ -802,6 +808,16 @@ th.num {
   }
 
   @media print and (max-width: 480px) {
+    #grandTotalPrintTop {
+      display: block !important;
+      margin-bottom: 2mm !important;
+      font-size: 9px !important;
+      line-height: 1.2 !important;
+    }
+    .print-divider {
+      display: block !important;
+      margin: 0 0 2mm 0 !important;
+    }
     #tab-stations .section-title {
       font-size: 10px !important;
       margin: 2px 0 2px !important;
