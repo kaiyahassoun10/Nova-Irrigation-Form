@@ -327,8 +327,6 @@
   }
   const isIOS = /iP(hone|od|ad)/i.test(navigator.userAgent || "");
   const isIPad = /iPad/i.test(navigator.userAgent || "");
-  const PRINT_RETURN_KEY = "nova.printReturn";
-  let printInProgress = false;
 
   const IDB_DB = "nova-irrigation";
   const IDB_STORE = "photos";
@@ -475,21 +473,14 @@
     return false;
   };
 
-  const selectTab = (tab) => {
-    const target = views[tab];
-    if (!target) return;
-    if (!requirePin(tab)) return;
-    const btn = document.querySelector(`.tab[data-tab="${tab}"]`);
-    tabs.forEach((b) => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
-    Object.values(views).forEach((el) => el.classList.add("hidden"));
-    target.classList.remove("hidden");
-  };
-
   tabs.forEach((btn) =>
     btn.addEventListener("click", () => {
       const v = btn.dataset.tab;
-      selectTab(v);
+      if (!requirePin(v)) return;
+      tabs.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      Object.values(views).forEach((el) => el.classList.add("hidden"));
+      views[v].classList.remove("hidden");
     })
   );
   document.addEventListener("click", (e) => {
@@ -497,7 +488,11 @@
     if (!btn) return;
     const v = btn.dataset.tab;
     if (!v || !views[v]) return;
-    selectTab(v);
+    if (!requirePin(v)) return;
+    tabs.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    Object.values(views).forEach((el) => el.classList.add("hidden"));
+    views[v].classList.remove("hidden");
   });
 
   // Logo
@@ -710,64 +705,26 @@
     setTimeout(restore, 400);
     setTimeout(restore, 1000);
   };
-  const saveReturnState = () => {
-    try {
-      const active = document.querySelector(".tab.active");
-      const tab = active ? active.getAttribute("data-tab") : "client";
-      localStorage.setItem(
-        PRINT_RETURN_KEY,
-        JSON.stringify({ tab, scrollY: window.scrollY })
-      );
-    } catch (_) {}
-  };
-
-  const restoreReturnState = () => {
-    try {
-      const raw = localStorage.getItem(PRINT_RETURN_KEY);
-      if (!raw) return;
-      localStorage.removeItem(PRINT_RETURN_KEY);
-      const data = JSON.parse(raw);
-      const tab = data && data.tab ? data.tab : "client";
-      selectTab(tab);
-      const y = data && typeof data.scrollY === "number" ? data.scrollY : 0;
-      setTimeout(() => window.scrollTo(0, y), 0);
-    } catch (_) {}
-  };
-
   const reloadAfterPrintOnIpad = () => {
     if (!isIPad) return;
-    saveReturnState();
     setTimeout(() => {
       window.location.reload();
     }, 300);
-  };
-  const handlePrintReturn = () => {
-    if (!isIPad || !printInProgress) return;
-    printInProgress = false;
-    reloadAfterPrintOnIpad();
   };
   try {
     window.addEventListener("beforeprint", () => {
       syncPrintDateOnce();
       resetIosViewportAfterPrint();
-      if (isIPad) printInProgress = true;
     });
     window.addEventListener("afterprint", () => {
       resetIosViewportAfterPrint();
       reloadAfterPrintOnIpad();
-    });
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") handlePrintReturn();
-    });
-    window.addEventListener("pageshow", () => {
-      handlePrintReturn();
     });
     const mq = window.matchMedia && window.matchMedia("print");
     if (mq && mq.addListener) {
       mq.addListener((e) => {
         if (e.matches) syncPrintDateOnce();
         resetIosViewportAfterPrint();
-        if (isIPad) printInProgress = true;
         if (!e.matches) reloadAfterPrintOnIpad();
       });
     }
@@ -1112,7 +1069,6 @@
   renderCatalog();
   renderStations();
   migratePhotosToIdb();
-  restoreReturnState();
 
   // Export / Backup
   $("#saveJson").addEventListener("click", () => {
