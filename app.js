@@ -684,17 +684,11 @@
       span.textContent = formatDateForPrint(state.client.date || "");
     }
   };
-  const setPrintMode = (isPrinting) => {
-    document.documentElement.classList.toggle("print-preview", !!isPrinting);
-  };
   try {
     window.addEventListener("beforeprint", syncPrintDateOnce);
-    window.addEventListener("beforeprint", () => setPrintMode(true));
-    window.addEventListener("afterprint", () => setPrintMode(false));
     const mq = window.matchMedia && window.matchMedia("print");
     if (mq && mq.addListener) {
       mq.addListener((e) => {
-        setPrintMode(e.matches);
         if (e.matches) syncPrintDateOnce();
       });
     }
@@ -797,7 +791,6 @@
   function renderStations() {
     stationsList.innerHTML = "";
     state.stations.forEach((st, si) => {
-      const isLastStation = si === state.stations.length - 1;
       st.photos = Array.isArray(st.photos)
         ? st.photos.filter(Boolean)
         : st.photo
@@ -853,11 +846,6 @@
             </div>
           </div>
         </div>
-        ${
-          !isLastStation
-            ? '<div class="station-next-note print-only">(See next station \u2193)</div>'
-            : ""
-        }
       `;
       const subtotalEl = wrap.querySelector(".subtotal");
       const updateStationTotals = () => {
