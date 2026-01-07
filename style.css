@@ -740,12 +740,12 @@ th.num {
   .photo-list {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 4px !important;
+    gap: 2px !important;
   }
 
   .photo-item,
   .photo-box {
-    flex: 0 0 calc(25% - 4px) !important;
+    flex: 0 0 calc(25% - 2px) !important;
   }
 
   .station textarea {
