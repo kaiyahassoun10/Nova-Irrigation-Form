@@ -479,6 +479,9 @@ th.num {
     margin: 0 !important;
     padding: 10mm !important; /* keep light padding without forcing extra page space */
   }
+  .container {
+    padding-bottom: 0 !important;
+  }
 
   /* Hide UI stuff: tabs, buttons, export tab, etc. */
   .tabs,
@@ -510,6 +513,8 @@ th.num {
     padding: 0;
     page-break-after: auto;
     break-after: auto;
+    page-break-after: avoid !important;
+    break-after: avoid-page !important;
   }
 
   #grandTotalPrintTop {
@@ -772,6 +777,45 @@ th.num {
     page-break-after: auto !important;
     break-after: auto !important;
     margin-bottom: 0 !important;
+  }
+
+  @media print and (max-width: 480px) {
+    #tab-stations .section-title {
+      font-size: 11px !important;
+      margin: 3px 0 2px !important;
+    }
+    .station {
+      padding: 4px 5px !important;
+      margin: 4px 0 !important;
+    }
+    .station table {
+      font-size: 9px !important;
+    }
+    .station th,
+    .station td {
+      padding: 2px 2px !important;
+    }
+    .station .photo img,
+    .station .photo-box {
+      width: 100% !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1;
+    }
+    .station textarea {
+      font-size: 9px !important;
+      min-height: 60px !important;
+      padding: 3px !important;
+    }
+    .station-side {
+      margin-top: 4px !important;
+    }
+    .photo-list {
+      gap: 3px !important;
+    }
+    .photo-item,
+    .photo-box {
+      flex: 0 0 calc(25% - 3px) !important;
+    }
   }
 
   /* Grand Total at bottom */
