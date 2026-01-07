@@ -502,7 +502,7 @@ th.num {
   #tab-stations {
     page-break-before: auto;
     break-before: auto;
-    margin: 6mm auto 10mm auto;
+    margin: 2mm auto 6mm auto;
     width: 90%;
     max-width: 900px;
     min-height: auto;
@@ -544,14 +544,16 @@ th.num {
   }
   #grandTotalPrintTop {
     display: block !important;
-    margin-bottom: 4mm !important;
+    margin-bottom: 2mm !important;
     page-break-after: avoid;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
   }
   .print-divider {
     display: block !important;
     width: 100%;
     border-top: 1px solid #e5e7eb;
-    margin: 0 0 6mm 0;
+    margin: 0 0 2mm 0;
   }
 
   /* Remove trailing divider area at end of stations */
