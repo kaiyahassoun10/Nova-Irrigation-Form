@@ -112,11 +112,6 @@ header {
   border-color: whitesmoke;
   font-weight: 600;
 }
-.zoom-reset {
-  display: flex;
-  justify-content: center;
-  margin: 6px 0 10px;
-}
 .card {
   background: white;
   border: 4px solid rgba(79, 83, 89, 0.35);
