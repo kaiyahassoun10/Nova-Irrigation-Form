@@ -502,18 +502,19 @@ th.num {
   #tab-stations {
     page-break-before: auto;
     break-before: auto;
-    margin: 6mm auto 10mm auto;
-    width: 90%;
+    margin: 2mm auto 4mm auto;
+    width: 100%;
     max-width: 900px;
     min-height: auto;
     display: block;
     padding: 0;
     page-break-after: auto;
     break-after: auto;
+    break-after: avoid-page;
   }
 
   #grandTotalPrintTop {
-    margin-bottom: 8mm !important;
+    display: none !important;
   }
 
   /* Center first-page content with larger top spacing */
@@ -545,12 +546,11 @@ th.num {
     display: none !important;
   }
   #grandTotalPrintTop {
-    display: block !important;
-    margin-bottom: 4mm !important;
+    display: none !important;
     page-break-after: avoid;
   }
   .print-divider {
-    display: block !important;
+    display: none !important;
     width: 100%;
     border-top: 1px solid #e5e7eb;
     margin: 0 0 6mm 0;
@@ -669,15 +669,15 @@ th.num {
   /* ---------- STATIONS / REPAIRS ---------- */
 
   #tab-stations .section-title {
-    font-size: 13px !important;
-    margin: 6px 0 4px !important;
+    font-size: 12px !important;
+    margin: 4px 0 3px !important;
   }
 
   .station {
     border: 1px solid #e5e7eb !important;
     border-radius: 10px !important;
-    padding: 6px 8px !important;
-    margin: 8px 0 !important;
+    padding: 5px 6px !important;
+    margin: 6px 0 !important;
     page-break-inside: avoid;
     break-inside: avoid;
     width: 100% !important;
@@ -700,13 +700,13 @@ th.num {
     width: 100%;
     border-collapse: collapse;
     margin-top: 2px !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
   }
 
   .station th,
   .station td {
     border-top: 1px solid #e5e7eb;
-    padding: 3px 4px !important;
+    padding: 2px 3px !important;
   }
 
   .station thead th {
@@ -725,19 +725,19 @@ th.num {
   /* Station photo + notes: more compact */
   .station .photo img,
   .station .photo-box {
-    width: 120px !important;
-    height: 120px !important;
+    width: 100px !important;
+    height: 100px !important;
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
   }
 
   .station textarea {
-    font-size: 11px !important;
-    padding: 4px !important;
+    font-size: 10px !important;
+    padding: 3px !important;
     background: #f9fafb !important;
     border-radius: 8px !important;
-    min-height: 100px !important;
+    min-height: 70px !important;
     width: 100% !important;
   }
 
@@ -754,57 +754,13 @@ th.num {
   }
 
   .station-side {
-    margin-top: 8px !important;
+    margin-top: 6px !important;
   }
 
   .station:last-child {
     page-break-after: auto !important;
     break-after: auto !important;
-  }
-
-  /* iOS print sizing tweaks to match desktop pagination */
-  @supports (-webkit-touch-callout: none) {
-    #tab-stations {
-      margin: 2mm auto 4mm auto !important;
-      width: 100% !important;
-    }
-    #grandTotalPrintTop {
-      display: none !important;
-    }
-    .print-divider {
-      display: none !important;
-    }
-    #tab-stations .section-title {
-      font-size: 12px !important;
-      margin: 4px 0 3px !important;
-    }
-    .station {
-      padding: 5px 6px !important;
-      margin: 6px 0 !important;
-    }
-    .station table {
-      font-size: 10px !important;
-    }
-    .station th,
-    .station td {
-      padding: 2px 3px !important;
-    }
-    .station .photo img,
-    .station .photo-box {
-      width: 100px !important;
-      height: 100px !important;
-    }
-    .station textarea {
-      font-size: 10px !important;
-      min-height: 70px !important;
-      padding: 3px !important;
-    }
-    .station-side {
-      margin-top: 6px !important;
-    }
-    .photo-list {
-      gap: 6px !important;
-    }
+    margin-bottom: 0 !important;
   }
 
   /* Grand Total at bottom */
