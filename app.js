@@ -511,6 +511,68 @@
     { id: "valve-replacement", label: "Valve Replacement", defaultPrice: 0 },
   ];
   const KEY = "nova_irrigation_form_v2";
+
+  // =====================
+// Supabase (Repair Catalog sync)
+// Use ONLY the anon key (never service_role) in browser code.
+// =====================
+const SUPABASE_URL = "https://drllwckdzhnmpgxmalom.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybGx3Y2tkemhubXBneG1hbG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MTM0NDYsImV4cCI6MjA4MzM4OTQ0Nn0.XzwFMSP2p2G6SKFXddFL-35z9OB_8oO9o3VaqKX7eoQ";
+const SUPABASE_HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  "Content-Type": "application/json",
+};
+
+const SUPA_HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  "Content-Type": "application/json",
+  Prefer: "return=representation",
+};
+
+async function supaFetch(path, options = {}) {
+  const url = `${SUPABASE_URL}/rest/v1${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...SUPA_HEADERS, ...(options.headers || {}) },
+  });
+
+  if (!res.ok) {
+    let msg = `${res.status} ${res.statusText}`;
+    try {
+      const j = await res.json();
+      if (j?.message) msg = `${msg}: ${j.message}`;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+// ---- Repair Catalog API (matches your table columns) ----
+async function supaGetRepairRows() {
+  return await supaFetch(
+    `/repair_catalog?select=id,description,price,active&active=eq.true&order=description.asc`,
+    { method: "GET" }
+  );
+}
+
+async function supaInsertRepairRow({ description, price, active = true }) {
+  return await supaFetch(`/repair_catalog`, {
+    method: "POST",
+    body: JSON.stringify([{ description, price, active }]),
+  });
+}
+
+async function supaUpdateRepairRow(id, patch) {
+  return await supaFetch(`/repair_catalog?id=eq.${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
   let state = loadState();
   if (!state) {
     state = {
@@ -528,11 +590,17 @@
         notes: "",
       },
       stations: [],
-      catalog: loadCatalog(),
+      catalog: [],
     };
   } else {
     state.stations = normalizeStations(state.stations);
   }
+  // 🔄 Load repair catalog from Supabase
+loadCatalog().then((catalog) => {
+  state.catalog = catalog;
+  saveAll();        // persist locally
+  renderCatalog();  // refresh UI
+});
 
   function loadState() {
     try {
@@ -546,16 +614,140 @@
       return null;
     }
   }
-  function loadCatalog() {
-    try {
-      const raw = localStorage.getItem(KEY + "_catalog");
-      if (!raw) return DEFAULT_CATALOG;
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : DEFAULT_CATALOG;
-    } catch (_) {
-      return DEFAULT_CATALOG;
-    }
+async function loadCatalog() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/repair_catalog?select=id,description,price,active&active=eq.true&order=created_at.asc`,
+      { headers: SUPABASE_HEADERS }
+    );
+
+    if (!res.ok) throw new Error("Failed to load catalog");
+
+    const rows = await res.json();
+
+    // ✅ MAP Supabase → UI shape
+    return rows.map((r) => ({
+      id: r.id,                          // Supabase ID (needed for update/delete)
+      label: r.description || "",        // UI uses "label"
+      defaultPrice: Number(r.price) || 0 // UI uses "defaultPrice"
+    }));
+  } catch (err) {
+    console.error("loadCatalog failed, using defaults", err);
+    return DEFAULT_CATALOG.map((x) => ({ ...x }));
   }
+}
+
+async function updateRepairItemInSupabase(item) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/repair_catalog?id=eq.${item.id}`,
+    {
+      method: "PATCH",
+      headers: SUPABASE_HEADERS,
+      body: JSON.stringify({
+        description: item.label || "",
+        price: Number(item.defaultPrice) || 0,
+        active: true,
+      }),
+    }
+  );
+
+  if (!res.ok) throw new Error(await res.text());
+}
+
+let _catalogHydrated = false;
+let _catalogSyncTimer = null;
+let _suppressCatalogSync = false;
+
+async function hydrateCatalogFromSupabaseOnce() {
+  if (_catalogHydrated) return;
+  _catalogHydrated = true;
+
+  try {
+    const rows = await supaGetRepairRows();
+
+    // If Supabase has rows, use them (shared across devices)
+    if (Array.isArray(rows) && rows.length) {
+      state.catalog = rows.map((r) => ({
+        // keep your existing shape, but remember the db id
+        id: "db-" + r.id,
+        dbId: r.id,
+        label: r.description,
+        defaultPrice: Number(r.price || 0),
+        active: !!r.active,
+      }));
+
+      _suppressCatalogSync = true;
+      localStorage.setItem(KEY + "_catalog", JSON.stringify(state.catalog));
+      _suppressCatalogSync = false;
+      return;
+    }
+
+    // If table is empty (first-time setup), seed it from DEFAULT_CATALOG
+    for (const item of DEFAULT_CATALOG) {
+      await supaInsertRepairRow({
+        description: item.label,
+        price: Number(item.defaultPrice || 0),
+        active: true,
+      });
+    }
+
+    const seeded = await supaGetRepairRows();
+    state.catalog = (seeded || []).map((r) => ({
+      id: "db-" + r.id,
+      dbId: r.id,
+      label: r.description,
+      defaultPrice: Number(r.price || 0),
+      active: !!r.active,
+    }));
+
+    _suppressCatalogSync = true;
+    localStorage.setItem(KEY + "_catalog", JSON.stringify(state.catalog));
+    _suppressCatalogSync = false;
+  } catch (e) {
+    console.error("Supabase hydrate failed, using local catalog:", e);
+  }
+}
+
+function scheduleCatalogSync() {
+  clearTimeout(_catalogSyncTimer);
+  _catalogSyncTimer = setTimeout(syncCatalogToSupabase, 700);
+}
+
+async function syncCatalogToSupabase() {
+  if (_suppressCatalogSync) return;
+
+  try {
+    const rows = await supaGetRepairRows();
+    const byDesc = new Map((rows || []).map((r) => [String(r.description), r]));
+
+    for (const item of state.catalog || []) {
+      const desc = String(item.label || "").trim();
+      if (!desc) continue;
+
+      const price = Number(item.defaultPrice || 0);
+      const existing = byDesc.get(desc);
+
+      if (existing) {
+        item.dbId = existing.id;
+
+        // update price if changed
+        if (Number(existing.price || 0) !== price) {
+          await supaUpdateRepairRow(existing.id, { price });
+        }
+      } else {
+        const inserted = await supaInsertRepairRow({
+          description: desc,
+          price,
+          active: true,
+        });
+        const row = inserted?.[0];
+        if (row?.id) item.dbId = row.id;
+      }
+    }
+  } catch (e) {
+    console.error("Supabase sync failed:", e);
+  }
+}
   let saveWarningShown = false;
   function saveAll() {
     try {
@@ -723,30 +915,60 @@
           saveAll();
           renderStations();
         });
-      row.querySelector('[data-act="remove"]').addEventListener("click", () => {
-        state.catalog.splice(idx, 1);
-        saveAll();
-        renderCatalog();
-        renderStations();
-      });
-      catalogList.appendChild(row);
-    });
-  }
-  $("#addCatalogItem").addEventListener("click", () => {
-    state.catalog.push({
-      id: "custom-" + Date.now(),
-      label: "New Item",
-      defaultPrice: 0,
-    });
-    saveAll();
-    renderCatalog();
-  });
-  $("#resetCatalog").addEventListener("click", () => {
-    state.catalog = DEFAULT_CATALOG.map((x) => ({ ...x }));
+      row.querySelector('[data-act="remove"]').addEventListener("click", async () => {
+  try {
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/repair_catalog?id=eq.${item.id}`,
+      {
+        method: "DELETE",
+        headers: SUPABASE_HEADERS,
+      }
+    );
+
+    state.catalog = await loadCatalog();
     saveAll();
     renderCatalog();
     renderStations();
-  });
+  } catch (err) {
+    console.error("Remove failed:", err);
+    alert("Could not remove item.");
+  }
+});
+      catalogList.appendChild(row);
+    });
+  }
+$("#addCatalogItem").addEventListener("click", async () => {
+  const newItem = {
+    label: "New Item",
+    defaultPrice: 0,
+  };
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/repair_catalog`,
+      {
+        method: "POST",
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          description: newItem.label,
+          price: newItem.defaultPrice,
+          active: true,
+        }),
+      }
+    );
+
+    if (!res.ok) throw new Error(await res.text());
+
+    // Reload shared catalog
+    state.catalog = await loadCatalog();
+    saveAll();
+    renderCatalog();
+    renderStations();
+  } catch (err) {
+    console.error("Add item failed:", err);
+    alert("Could not add catalog item.");
+  }
+});
 
   // Stations UI
   const stationsList = $("#stationsList");
