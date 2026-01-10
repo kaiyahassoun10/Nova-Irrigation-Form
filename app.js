@@ -889,6 +889,17 @@ async function syncCatalogToSupabase() {
   // Catalog UI
   const catalogList = $("#catalogList");
   function renderCatalog() {
+    // Always enforce Supabase ID order
+state.catalog.sort((a, b) => {
+  const ai = Number(a.id);
+  const bi = Number(b.id);
+
+  if (Number.isNaN(ai) && Number.isNaN(bi)) return 0;
+  if (Number.isNaN(ai)) return 1;
+  if (Number.isNaN(bi)) return -1;
+
+  return ai - bi;
+});
     catalogList.innerHTML = "";
     state.catalog.forEach((item, idx) => {
       const row = document.createElement("div");
