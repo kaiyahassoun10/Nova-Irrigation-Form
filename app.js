@@ -617,7 +617,7 @@ loadCatalog().then((catalog) => {
 async function loadCatalog() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/repair_catalog?select=id,description,price,active&active=eq.true&order=created_at.asc`,
+      `${SUPABASE_URL}/rest/v1/repair_catalog?select=id,description,price,active&active=eq.true&order=id.asc`,
       { headers: SUPABASE_HEADERS }
     );
 
