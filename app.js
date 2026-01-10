@@ -903,37 +903,36 @@ async function syncCatalogToSupabase() {
           Number(item.defaultPrice) || 0
         }" data-k="defaultPrice"></div>
         <div class="row"><button class="btn ghost" data-act="remove">Remove</button></div>`;
-      row.querySelector('[data-k="label"]').addEventListener("input", (e) => {
-        item.label = e.target.value;
-        saveAll();
-        renderStations();
-      });
-      row
-        .querySelector('[data-k="defaultPrice"]')
-        .addEventListener("input", (e) => {
-          item.defaultPrice = parseFloat(e.target.value || "0") || 0;
-          saveAll();
-          renderStations();
-        });
-      row.querySelector('[data-act="remove"]').addEventListener("click", async () => {
-  try {
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/repair_catalog?id=eq.${item.id}`,
-      {
-        method: "DELETE",
-        headers: SUPABASE_HEADERS,
-      }
-    );
+     row.querySelector('[data-k="label"]').addEventListener("change", async (e) => {
+  item.label = e.target.value;
+  saveAll();
+  renderStations();
 
-    state.catalog = await loadCatalog();
-    saveAll();
-    renderCatalog();
-    renderStations();
+  try {
+    await updateRepairItemInSupabase(item);
   } catch (err) {
-    console.error("Remove failed:", err);
-    alert("Could not remove item.");
+    console.error("Failed to update problem name in Supabase", err);
   }
 });
+     row
+  .querySelector('[data-k="defaultPrice"]')
+  .addEventListener("change", async (e) => {
+    item.defaultPrice = parseFloat(e.target.value || "0") || 0;
+    saveAll();
+    renderStations();
+
+    try {
+      await updateRepairItemInSupabase(item);
+    } catch (err) {
+      console.error("Failed to update price in Supabase", err);
+    }
+  });
+      row.querySelector('[data-act="remove"]').addEventListener("click", () => {
+        state.catalog.splice(idx, 1);
+        saveAll();
+        renderCatalog();
+        renderStations();
+      });
       catalogList.appendChild(row);
     });
   }
