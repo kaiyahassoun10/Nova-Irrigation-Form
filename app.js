@@ -617,9 +617,9 @@ loadCatalog().then((catalog) => {
 async function loadCatalog() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/repair_catalog?select=id,description,price,active&active=eq.true&order=id.asc`,
-      { headers: SUPABASE_HEADERS }
-    );
+  `${SUPABASE_URL}/rest/v1/repair_catalog?select=id,description,price,active&active=eq.true&order=id.asc`,
+  { headers: SUPABASE_HEADERS }
+);
 
     if (!res.ok) throw new Error("Failed to load catalog");
 
@@ -652,6 +652,48 @@ async function updateRepairItemInSupabase(item) {
   );
 
   if (!res.ok) throw new Error(await res.text());
+}
+
+async function addRepairItemInSupabase({ label, defaultPrice }) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/repair_catalog`, {
+    method: "POST",
+    headers: SUPABASE_HEADERS,
+    body: JSON.stringify({
+      description: label || "New Item",
+      price: Number(defaultPrice) || 0,
+      active: true,
+    }),
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+
+  return true;
+}
+
+async function softDeleteRepairItemInSupabase(id) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/repair_catalog?id=eq.${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: {
+        ...SUPABASE_HEADERS,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({ active: false }),
+    }
+  );
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || "Soft delete failed");
+
+  // If Prefer return=representation is respected, Supabase returns the updated row(s)
+  let updated = [];
+  try {
+    updated = text ? JSON.parse(text) : [];
+  } catch (_) {}
+
+  return updated; // array (possibly empty)
 }
 
 let _catalogHydrated = false;
@@ -913,7 +955,7 @@ state.catalog.sort((a, b) => {
         <div><label>Default Price ($)</label><input type="number" min="0" step="0.01" value="${
           Number(item.defaultPrice) || 0
         }" data-k="defaultPrice"></div>
-        <div class="row"><button class="btn ghost" data-act="remove">Remove</button></div>`;
+        <div class="row"><button type="button" class="btn ghost" data-act="remove">Remove</button></div>`;
      row.querySelector('[data-k="label"]').addEventListener("change", async (e) => {
   item.label = e.target.value;
   saveAll();
@@ -938,45 +980,71 @@ state.catalog.sort((a, b) => {
       console.error("Failed to update price in Supabase", err);
     }
   });
-      row.querySelector('[data-act="remove"]').addEventListener("click", () => {
-        state.catalog.splice(idx, 1);
-        saveAll();
-        renderCatalog();
-        renderStations();
-      });
-      catalogList.appendChild(row);
-    });
-  }
-$("#addCatalogItem").addEventListener("click", async () => {
-  const newItem = {
-    label: "New Item",
-    defaultPrice: 0,
-  };
+      row.querySelector('[data-act="remove"]').addEventListener("click", async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/repair_catalog`,
-      {
-        method: "POST",
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({
-          description: newItem.label,
-          price: newItem.defaultPrice,
-          active: true,
-        }),
-      }
-    );
+    // 0) If this device has a stale/local item id, refresh catalog first
+    const numericId = Number(item.id);
+    if (!Number.isFinite(numericId)) {
+      const fresh = await loadCatalog();
+      state.catalog = Array.isArray(fresh) ? fresh : [];
+      saveAll();
+      renderCatalog();
+      renderStations();
+      alert("Catalog was out of sync on this device. Try Remove again.");
+      return;
+    }
 
-    if (!res.ok) throw new Error(await res.text());
+    // 1) Soft delete in Supabase and verify it actually updated something
+    const updated = await softDeleteRepairItemInSupabase(numericId);
+    if (!updated || updated.length === 0) {
+      // Nothing updated -> this device is out of sync OR bad id
+      const fresh = await loadCatalog();
+      state.catalog = Array.isArray(fresh) ? fresh : [];
+      saveAll();
+      renderCatalog();
+      renderStations();
+      alert("This item wasn’t synced on this device yet. Try Remove again.");
+      return;
+    }
 
-    // Reload shared catalog
-    state.catalog = await loadCatalog();
+    // 2) Reload from Supabase (source of truth)
+    const fresh = await loadCatalog();
+    state.catalog = Array.isArray(fresh) ? fresh : [];
+
+    // 3) Persist + re-render
     saveAll();
     renderCatalog();
     renderStations();
   } catch (err) {
-    console.error("Add item failed:", err);
-    alert("Could not add catalog item.");
+    console.error("Remove failed:", err);
+    alert("Remove failed. Check console for details.");
+  }
+});
+      catalogList.appendChild(row);
+    });
+  }
+$("#addCatalogItem").addEventListener("click", async () => {
+  try {
+    // 1) Insert into Supabase (single source of truth)
+    await addRepairItemInSupabase({
+      label: "New Item",
+      defaultPrice: 0,
+    });
+
+    // 2) Reload catalog from Supabase (keeps order + IDs correct)
+    const fresh = await loadCatalog();
+    state.catalog = Array.isArray(fresh) ? fresh : [];
+
+    // 3) Persist + re-render
+    saveAll();
+    renderCatalog();
+    renderStations();
+  } catch (err) {
+    console.error("Add Item failed:", err);
+    alert("Add Item failed. Check console for details.");
   }
 });
 
