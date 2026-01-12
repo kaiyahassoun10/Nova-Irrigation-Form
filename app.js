@@ -696,6 +696,79 @@ async function softDeleteRepairItemInSupabase(id) {
   return updated; // array (possibly empty)
 }
 
+// ===============================
+// CLIENT CATALOG (Supabase)
+// ===============================
+
+async function loadClientCatalogFromSupabase() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/client_catalog?select=*&active=eq.true&order=id.asc`,
+    { headers: SUPABASE_HEADERS }
+  );
+  if (!res.ok) throw new Error(await res.text());
+  return await res.json();
+}
+
+// Insert OR Update (by id if present)
+async function upsertClientInSupabase(client) {
+  // If you have "id" you can PATCH. If no id, POST.
+  if (client.id) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/client_catalog?id=eq.${client.id}`,
+      {
+        method: "PATCH",
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          job_name: client.jobName || "",
+          controller_number: client.controller || "",
+          client_name: client.clientName || "",
+          phone: client.clientPhone || "",
+          email: client.clientEmail || "",
+          address: client.address || "",
+          city_state_zip: client.cityStateZip || "",
+          technician: client.technician || "",
+          notes: client.notes || "",
+          active: true,
+        }),
+      }
+    );
+    if (!res.ok) throw new Error(await res.text());
+    return;
+  }
+
+  // No id => create
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/client_catalog`, {
+    method: "POST",
+    headers: SUPABASE_HEADERS,
+    body: JSON.stringify({
+      job_name: client.jobName || "",
+      controller_number: client.controller || "",
+      client_name: client.clientName || "",
+      phone: client.clientPhone || "",
+      email: client.clientEmail || "",
+      address: client.address || "",
+      city_state_zip: client.cityStateZip || "",
+      technician: client.technician || "",
+      notes: client.notes || "",
+      active: true,
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+// Soft delete so it disappears everywhere
+async function softDeleteClientInSupabase(id) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/client_catalog?id=eq.${id}`,
+    {
+      method: "PATCH",
+      headers: SUPABASE_HEADERS,
+      body: JSON.stringify({ active: false }),
+    }
+  );
+  if (!res.ok) throw new Error(await res.text());
+}
+
 let _catalogHydrated = false;
 let _catalogSyncTimer = null;
 let _suppressCatalogSync = false;
@@ -1409,7 +1482,7 @@ function loadClientCatalog() {
 function saveClientCatalog(list) {
   localStorage.setItem(CC_KEY, JSON.stringify(list));
   renderClientCatalog();
-  populateClientPreset();
+  populateClientPresetFromRows(clientRows);
 }
 
 function renderClientCatalog() {
@@ -1465,21 +1538,17 @@ function renderClientCatalog() {
   });
 }
 
-function populateClientPreset() {
+function populateClientPresetFromRows(rows) {
   const sel = document.getElementById("clientPreset");
   if (!sel) return;
-  const current = sel.value;
-  sel.innerHTML = '<option value="">-- Select saved client --</option>';
-  loadClientCatalog().forEach((it, idx) => {
+
+  sel.innerHTML = `<option value="">Load saved client</option>`;
+  rows.forEach((r) => {
     const opt = document.createElement("option");
-    opt.value = String(idx);
-    opt.textContent = `${it.jobName || "(no name)"}${
-      it.controller ? " — Ctl# " + it.controller : ""
-    }`;
+    opt.value = String(r.id);
+    opt.textContent = `${r.job_name || "(no job name)"} — ${r.client_name || ""}`;
     sel.appendChild(opt);
   });
-  if (current && sel.querySelector(`option[value="${current}"]`))
-    sel.value = current;
 }
 
 function initClientCatalogUI() {
@@ -1533,6 +1602,21 @@ function initClientCatalogUI() {
   renderClientCatalog();
 }
 
+let clientRows = []; // single source used by dropdown + table
+
+async function refreshClientCatalogUI() {
+  try {
+    clientRows = await loadClientCatalogFromSupabase();
+  } catch (err) {
+    console.error("Failed to load client catalog from Supabase", err);
+    clientRows = [];
+  }
+
+  // Re-render the table + dropdown using clientRows
+  renderClientCatalogFromRows(clientRows);
+  populateClientPresetFromRows(clientRows);
+}
+
 function initClientPresetControls() {
   const sel = document.getElementById("clientPreset");
   if (sel) {
@@ -1581,7 +1665,8 @@ function initClientPresetControls() {
       alert("Saved to Client Catalog.");
     });
   }
-  populateClientPreset();
+  populateClientPresetFromRows(clientRows);
+
 }
 
 document.addEventListener("DOMContentLoaded", () => {
