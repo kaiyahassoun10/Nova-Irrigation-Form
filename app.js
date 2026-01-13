@@ -1556,13 +1556,29 @@ function populateClientPresetFromRows(rows) {
   const sel = document.getElementById("clientPreset");
   if (!sel) return;
 
-  sel.innerHTML = `<option value="">Load saved client</option>`;
-  rows.forEach((r) => {
+  const current = sel.value;
+
+  sel.innerHTML = `<option value="">— Select saved client —</option>`;
+
+  (rows || []).forEach((r, idx) => {
     const opt = document.createElement("option");
-    opt.value = String(r.id);
-    opt.textContent = `${r.job_name || "(no job name)"} — ${r.client_name || ""}`;
+
+    // IMPORTANT: store the index so initClientPresetControls can do clientRows[idx]
+    opt.value = String(idx);
+
+    // Support BOTH formats: mapped UI camelCase OR raw Supabase snake_case
+    const jobName = r.jobName ?? r.job_name ?? "(no job name)";
+
+    // Show job name only (no controller #, no client name)
+    opt.textContent = jobName;
+
     sel.appendChild(opt);
   });
+
+  // Keep current selection if still valid
+  if (current && sel.querySelector(`option[value="${current}"]`)) {
+    sel.value = current;
+  }
 }
 
 function initClientCatalogUI() {
@@ -1640,7 +1656,7 @@ function initClientPresetControls() {
     sel.addEventListener("change", () => {
       const idx = sel.value;
       if (idx === "") return;
-      const it = clientRows[parseInt(idx)];
+      const it = clientRows[parseInt(idx, 10)];
       if (!it) return;
       const map = {
         jobName: "jobName",
