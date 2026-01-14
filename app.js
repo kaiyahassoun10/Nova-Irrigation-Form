@@ -532,23 +532,23 @@ const SUPA_HEADERS = {
 };
 
 async function supaFetch(path, options = {}) {
-  const url = `${SUPABASE_URL}/rest/v1${path}`;
-  const res = await fetch(url, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
     ...options,
-    headers: { ...SUPA_HEADERS, ...(options.headers || {}) },
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+      ...(options.headers || {}),
+    },
   });
 
   if (!res.ok) {
-    let msg = `${res.status} ${res.statusText}`;
-    try {
-      const j = await res.json();
-      if (j?.message) msg = `${msg}: ${j.message}`;
-    } catch {}
-    throw new Error(msg);
+    const text = await res.text();
+    throw new Error(text);
   }
 
-  const txt = await res.text();
-  return txt ? JSON.parse(txt) : null;
+  return res.status === 204 ? null : res.json();
 }
 
 // ---- Repair Catalog API (matches your table columns) ----
@@ -1396,9 +1396,18 @@ $("#addCatalogItem").addEventListener("click", async () => {
   }
 
 
-// ===== Client Catalog (localStorage) =====
+
+// ===========================
+// CLIENT CATALOG (Supabase + localStorage, cross-device)
+// ===========================
+
+// Local fallback cache (per-device)
 const CC_KEY = "clientCatalog_v1";
 
+// In-memory source used by dropdown + (optional) table
+let clientRows = [];
+
+// ----- localStorage helpers -----
 function loadClientCatalog() {
   try {
     return JSON.parse(localStorage.getItem(CC_KEY) || "[]");
@@ -1406,188 +1415,285 @@ function loadClientCatalog() {
     return [];
   }
 }
+
 function saveClientCatalog(list) {
-  localStorage.setItem(CC_KEY, JSON.stringify(list));
-  renderClientCatalog();
-  populateClientPresetFromRows(clientRows);
+  localStorage.setItem(CC_KEY, JSON.stringify(list || []));
 }
 
-// ===============================
-// CLIENT CATALOG (Supabase)
-// ===============================
-async function loadClientCatalogFromSupabase() {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/client_catalog?select=*&active=eq.true&order=id.asc`,
-    { headers: SUPABASE_HEADERS }
-  );
-  if (!res.ok) throw new Error(await res.text());
-  const rows = await res.json();
+// ----- Supabase helpers (client_catalog table) -----
+// NOTE: relies on SUPABASE_URL + SUPA_HEADERS + supaFetch defined above in this file.
 
-// Map Supabase rows → UI format
-return rows.map(r => ({
+async function loadClientCatalogFromSupabase() {
+  const rows = await supaFetch(
+  "/client_catalog?select=id,job_name,controller_number,client_name,phone,email,address,city_state_zip,technician,active&active=eq.true&order=id.asc",
+  { method: "GET" }
+);
+
+  return (rows || []).map((r) => ({
   id: r.id,
   jobName: r.job_name ?? "",
   controller: r.controller_number ?? "",
   clientName: r.client_name ?? "",
   clientPhone: r.phone ?? "",
-  email: r.email ?? "",
+  clientEmail: r.email ?? "",
   address: r.address ?? "",
   cityStateZip: r.city_state_zip ?? "",
   technician: r.technician ?? "",
-  notes: r.notes ?? "",
   active: r.active ?? true,
 }));
 }
 
-// Insert OR Update (by id if present)
 async function upsertClientInSupabase(client) {
-  // If you have "id" you can PATCH. If no id, POST.
+  const payload = {
+  job_name: client.jobName || "",
+  controller_number: client.controller || "",
+  client_name: client.clientName || "",
+  phone: client.clientPhone || "",
+  email: client.clientEmail || "",
+  address: client.address || "",
+  city_state_zip: client.cityStateZip || "",
+  technician: client.technician || "",
+  active: client.active ?? true,
+};
+
   if (client.id) {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/client_catalog?id=eq.${client.id}`,
-      {
-        method: "PATCH",
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({
-          job_name: client.jobName || "",
-          controller_number: client.controller || "",
-          client_name: client.clientName || "",
-          phone: client.clientPhone || "",
-          email: client.clientEmail || "",
-          address: client.address || "",
-          city_state_zip: client.cityStateZip || "",
-          technician: client.technician || "",
-          notes: client.notes || "",
-          active: true,
-        }),
-      }
-    );
-    if (!res.ok) throw new Error(await res.text());
+    // PATCH existing
+    await supaFetch(`/client_catalog?id=eq.${client.id}`, {
+      method: "PATCH",
+      headers: SUPA_HEADERS,
+      body: JSON.stringify(payload),
+    });
+    return client.id;
+  }
+
+  // POST new
+  const inserted = await supaFetch("/client_catalog", {
+    method: "POST",
+    headers: SUPA_HEADERS,
+    body: JSON.stringify(payload),
+  });
+
+  // Supabase REST returns inserted rows when Prefer: return=representation
+  return Array.isArray(inserted) && inserted[0] ? inserted[0].id : null;
+}
+
+async function softDeleteClientInSupabase(id) {
+  if (!id) return;
+  await supaFetch(`/client_catalog?id=eq.${id}`, {
+    method: "PATCH",
+    headers: SUPA_HEADERS,
+    body: JSON.stringify({ active: false }),
+  });
+}
+
+// ----- UI wiring -----
+function populateClientPresetFromRows(rows) {
+  const sel = document.getElementById("clientPreset");
+  if (!sel) return;
+
+  sel.innerHTML = '<option value="">— Select saved client —</option>';
+
+  (rows || []).forEach((r) => {
+    const opt = document.createElement("option");
+    opt.value = String(r.id);
+    // Show something friendly; include clientName only if present
+    opt.textContent = r.clientName
+      ? `${r.jobName || "(no job name)"} — ${r.clientName}`
+      : `${r.jobName || "(no job name)"}`;
+    sel.appendChild(opt);
+  });
+}
+
+function fillClientInfoFromRow(it) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? "";
+  };
+
+  set("jobName", it.jobName);
+  set("jobNumber", it.controller);
+  set("clientName", it.clientName);
+  set("clientPhone", it.clientPhone);
+  set("clientEmail", it.clientEmail);
+  set("address", it.address);
+  set("cityStateZip", it.cityStateZip);
+  set("technician", it.technician);
+  set("notes", it.notes);
+}
+
+function clearClientInfoForm() {
+  const ids = [
+    "jobName",
+    "jobNumber",
+    "technician",
+    "date",
+    "clientName",
+    "clientPhone",
+    "clientEmail",
+    "address",
+    "cityStateZip",
+    "notes",
+  ];
+
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  const sel = document.getElementById("clientPreset");
+  if (sel) sel.value = "";
+}
+
+function initClientPresetControls() {
+  const sel = document.getElementById("clientPreset");
+  if (sel) {
+    sel.addEventListener("change", () => {
+    sel.addEventListener("change", () => {
+  if (!sel.value) {
+    clearClientInfoForm();
     return;
   }
 
-  // No id => create
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/client_catalog`, {
-    method: "POST",
-    headers: SUPABASE_HEADERS,
-    body: JSON.stringify({
-      job_name: client.jobName || "",
-      controller_number: client.controller || "",
-      client_name: client.clientName || "",
-      phone: client.clientPhone || "",
-      email: client.clientEmail || "",
-      address: client.address || "",
-      city_state_zip: client.cityStateZip || "",
-      technician: client.technician || "",
-      notes: client.notes || "",
-      active: true,
-    }),
-  });
-  if (!res.ok) throw new Error(await res.text());
+  // existing code that fills the form...
+});
+      const id = Number(sel.value);
+      if (!sel.value) return;
+
+      const it = clientRows.find((r) => Number(r.id) === id);
+      if (!it) return;
+
+      fillClientInfoFromRow(it);
+    });
+  }
+
+  const btnSave = document.getElementById("saveToClientCatalog");
+  if (btnSave) {
+    btnSave.addEventListener("click", async () => {
+      const get = (id) => document.getElementById(id);
+
+      const item = {
+        jobName: (get("jobName")?.value || "").trim(),
+        controller: (get("jobNumber")?.value || "").trim(),
+        clientName: (get("clientName")?.value || "").trim(),
+        clientPhone: (get("clientPhone")?.value || "").trim(),
+        clientEmail: (get("clientEmail")?.value || "").trim(),
+        address: (get("address")?.value || "").trim(),
+        cityStateZip: (get("cityStateZip")?.value || "").trim(),
+        technician: (get("technician")?.value || "").trim(),
+        notes: (get("notes")?.value || "").trim(),
+        active: true,
+      };
+
+      if (!item.jobName) {
+        alert("Please enter a Job Name before saving.");
+        return;
+      }
+
+      try {
+        // If a row with the same job name exists, update it
+        const existing = clientRows.find(
+          (r) => (r.jobName || "").toLowerCase() === item.jobName.toLowerCase()
+        );
+        if (existing) item.id = existing.id;
+
+        await upsertClientInSupabase(item);
+        await refreshClientCatalogUI(); // refresh dropdown/table + local cache
+        alert("Saved to Client Catalog.");
+      } catch (err) {
+        console.error("Save to Supabase failed:", err);
+        alert("Save failed. Check console for details.");
+      }
+    });
+  }
 }
 
-// Soft delete so it disappears everywhere
-async function softDeleteClientInSupabase(id) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/client_catalog?id=eq.${id}`,
-    {
-      method: "PATCH",
-      headers: SUPABASE_HEADERS,
-      body: JSON.stringify({ active: false }),
-    }
-  );
-  if (!res.ok) throw new Error(await res.text());
-}
-
+// Optional: keep your Client Catalog tab table working
 function renderClientCatalog() {
   const list = loadClientCatalog();
   const tbody = document.querySelector("#cc_table tbody");
   if (!tbody) return;
+
   tbody.innerHTML = "";
   list.forEach((item, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-        <td>${item.jobName || ""}</td>
-        <td>${item.controller || ""}</td>
-        <td>${item.clientName || ""}</td>
-        <td>${item.clientPhone || ""}</td>
-        <td class="num">
-          <button class="btn" data-edit="${idx}">Edit</button>
-          <button class="btn" data-del="${idx}">Delete</button>
-        </td>
-      `;
+      <td>${item.jobName || ""}</td>
+      <td>${item.controller || ""}</td>
+      <td>${item.clientName || ""}</td>
+      <td>${item.clientPhone || ""}</td>
+      <td class="num">
+        <button class="btn" data-edit="${idx}">Edit</button>
+        <button class="btn" data-del="${idx}">Delete</button>
+      </td>
+    `;
     tbody.appendChild(tr);
   });
+
+  // Edit: load row into Client Catalog form inputs (cc_* fields)
   tbody.querySelectorAll("[data-edit]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const i = parseInt(btn.getAttribute("data-edit"));
+      const i = parseInt(btn.getAttribute("data-edit"), 10);
       const it = loadClientCatalog()[i];
       if (!it) return;
+
       const map = {
         jobName: "cc_jobName",
         controller: "cc_controller",
         clientName: "cc_clientName",
         clientPhone: "cc_clientPhone",
+        clientEmail: "cc_clientEmail",
         address: "cc_address",
         cityStateZip: "cc_cityStateZip",
         technician: "cc_technician",
         notes: "cc_notes",
       };
+
       Object.entries(map).forEach(([k, id]) => {
         const el = document.getElementById(id);
         if (el) el.value = it[k] || "";
       });
-      document
-        .getElementById("cc_addOrUpdate")
-        .setAttribute("data-index", String(i));
+
+      const addBtn = document.getElementById("cc_addOrUpdate");
+      if (addBtn) addBtn.setAttribute("data-index", String(i));
     });
   });
+
+  // Delete: soft delete in Supabase (if we have id) + remove from local cache
   tbody.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const i = parseInt(btn.getAttribute("data-del"));
+    btn.addEventListener("click", async () => {
+      const i = parseInt(btn.getAttribute("data-del"), 10);
       const arr = loadClientCatalog();
+      const it = arr[i];
+      if (!it) return;
+
+      // Best effort: if we can match by jobName to a Supabase row, soft-delete it too
+      const supaRow = clientRows.find(
+        (r) => (r.jobName || "").toLowerCase() === (it.jobName || "").toLowerCase()
+      );
+      if (supaRow?.id) {
+        try {
+          await softDeleteClientInSupabase(supaRow.id);
+        } catch (e) {
+          console.error("Soft delete failed:", e);
+        }
+      }
+
       arr.splice(i, 1);
       saveClientCatalog(arr);
+      await refreshClientCatalogUI();
     });
   });
-}
-
-function populateClientPresetFromRows(rows) {
-  const sel = document.getElementById("clientPreset");
-  if (!sel) return;
-
-  const current = sel.value;
-
-  sel.innerHTML = `<option value="">— Select saved client —</option>`;
-
-  (rows || []).forEach((r, idx) => {
-    const opt = document.createElement("option");
-
-    // IMPORTANT: store the index so initClientPresetControls can do clientRows[idx]
-    opt.value = String(idx);
-
-    // Support BOTH formats: mapped UI camelCase OR raw Supabase snake_case
-    const jobName = r.jobName ?? r.job_name ?? "(no job name)";
-
-    // Show job name only (no controller #, no client name)
-    opt.textContent = jobName;
-
-    sel.appendChild(opt);
-  });
-
-  // Keep current selection if still valid
-  if (current && sel.querySelector(`option[value="${current}"]`)) {
-    sel.value = current;
-  }
 }
 
 function initClientCatalogUI() {
   const get = (id) => document.getElementById(id);
+
   const fields = [
     "jobName",
     "controller",
     "clientName",
     "clientPhone",
+    "clientEmail",
     "address",
     "cityStateZip",
     "technician",
@@ -1596,21 +1702,60 @@ function initClientCatalogUI() {
 
   const btnAdd = get("cc_addOrUpdate");
   if (btnAdd) {
-    btnAdd.addEventListener("click", () => {
+    btnAdd.addEventListener("click", async () => {
       const item = {};
       fields.forEach((f) => (item[f] = (get("cc_" + f)?.value || "").trim()));
+      item.active = true;
+
+      if (!item.jobName) {
+        alert("Job Name is required.");
+        return;
+      }
+
+      // If editing an existing local row, carry over its Supabase id if present
       const arr = loadClientCatalog();
       const idxAttr = btnAdd.getAttribute("data-index");
       if (idxAttr) {
-        const i = parseInt(idxAttr);
-        arr[i] = item;
-        btnAdd.removeAttribute("data-index");
+        const i = parseInt(idxAttr, 10);
+        const prev = arr[i];
+        if (prev && prev.id) item.id = prev.id;
       } else {
-        arr.push(item);
+        // Otherwise try to match by jobName in current Supabase cache
+        const existing = clientRows.find(
+          (r) => (r.jobName || "").toLowerCase() === item.jobName.toLowerCase()
+        );
+        if (existing) item.id = existing.id;
       }
-      saveClientCatalog(arr);
+
+      try {
+        const newId = await upsertClientInSupabase(item);
+        if (newId) item.id = newId;
+
+        // Update local cache
+        const arr2 = loadClientCatalog();
+        const idx2 = arr2.findIndex(
+          (x) => (x.jobName || "").toLowerCase() === item.jobName.toLowerCase()
+        );
+        if (idx2 >= 0) arr2[idx2] = item;
+        else arr2.push(item);
+
+        saveClientCatalog(arr2);
+
+        // Reset edit mode
+        btnAdd.removeAttribute("data-index");
+        fields.forEach((f) => {
+          const el = get("cc_" + f);
+          if (el) el.value = "";
+        });
+
+        await refreshClientCatalogUI();
+      } catch (err) {
+        console.error("Client catalog save failed:", err);
+        alert("Save failed. Check console for details.");
+      }
     });
   }
+
   const btnNew = get("cc_new");
   if (btnNew) {
     btnNew.addEventListener("click", () => {
@@ -1621,109 +1766,43 @@ function initClientCatalogUI() {
       btnAdd?.removeAttribute("data-index");
     });
   }
+
   const btnClr = get("cc_clearAll");
   if (btnClr) {
-    btnClr.addEventListener("click", () => {
+    btnClr.addEventListener("click", async () => {
       if (confirm("Clear all saved clients on this device?")) {
         saveClientCatalog([]);
+        await refreshClientCatalogUI();
       }
     });
   }
+
   renderClientCatalog();
 }
-
-let clientRows = []; // single source used by dropdown + table
 
 async function refreshClientCatalogUI() {
   try {
     clientRows = await loadClientCatalogFromSupabase();
   } catch (err) {
     console.error("Failed to load client catalog from Supabase", err);
-    clientRows = [];
+    // fall back to local cache
+    clientRows = loadClientCatalog();
   }
 
-// Save Supabase rows locally so existing UI keeps working
-saveClientCatalog(clientRows);
+  // Cache locally for offline + table UI
+  saveClientCatalog(clientRows);
 
-// Re-render using your existing functions
-renderClientCatalog();
-populateClientPresetFromRows(clientRows);
-}
-
-function initClientPresetControls() {
-  const sel = document.getElementById("clientPreset");
-  if (sel) {
-    sel.addEventListener("change", () => {
-      const idx = sel.value;
-      if (idx === "") return;
-      const it = clientRows[parseInt(idx, 10)];
-      if (!it) return;
-      const map = {
-        jobName: "jobName",
-        controller: "jobNumber", // keep existing id for compatibility
-        clientName: "clientName",
-        clientPhone: "clientPhone",
-        address: "address",
-        cityStateZip: "cityStateZip",
-        technician: "technician",
-        notes: "notes",
-      };
-      Object.entries(map).forEach(([srcKey, destId]) => {
-        const el = document.getElementById(destId);
-        if (el) el.value = it[srcKey] || "";
-      });
-    });
-  }
-  const btnSave = document.getElementById("saveToClientCatalog");
-  if (btnSave) {
-    btnSave.addEventListener("click", () => {
-      const get = (id) => document.getElementById(id);
-      const item = {
-        jobName: (get("jobName")?.value || "").trim(),
-        controller: (get("jobNumber")?.value || "").trim(),
-        clientName: (get("clientName")?.value || "").trim(),
-        clientPhone: (get("clientPhone")?.value || "").trim(),
-        address: (get("address")?.value || "").trim(),
-        cityStateZip: (get("cityStateZip")?.value || "").trim(),
-        technician: (get("technician")?.value || "").trim(),
-        notes: (get("notes")?.value || "").trim(),
-      };
-      const arr = loadClientCatalog();
-      const idx = arr.findIndex(
-        (x) => (x.jobName || "").toLowerCase() === item.jobName.toLowerCase()
-      );
-      if (idx >= 0) arr[idx] = item;
-      else arr.push(item);
-      saveClientCatalog(arr);
-      alert("Saved to Client Catalog.");
-    });
-  }
+  renderClientCatalog();
   populateClientPresetFromRows(clientRows);
-
 }
 
-let CLIENT_ROWS_CACHE = [];
-
-async function hydrateClientPresetFromSupabase() {
-  try {
-    // Use whatever function you already have that loads client_catalog rows
-    // Common names we used earlier: supaGetClientRows() or loadClientCatalogFromSupabase()
-    const rows = await supaGetClientRows(); // <-- if yours has a different name, swap it
-
-    CLIENT_ROWS_CACHE = Array.isArray(rows) ? rows : [];
-    populateClientPresetFromRows(CLIENT_ROWS_CACHE);
-  } catch (err) {
-    console.error("Failed to hydrate client preset from Supabase", err);
-    CLIENT_ROWS_CACHE = [];
-    populateClientPresetFromRows([]);
-  }
-}
-
+// Bootstrap
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1) Wire UI buttons/listeners
   initClientCatalogUI();
   initClientPresetControls();
 
-  // 2) Load from Supabase + populate dropdown/table immediately (no PIN required)
+  // Load from Supabase immediately so dropdown works without unlocking any tab
   await refreshClientCatalogUI();
+
+  clearClientInfoForm();
 });
