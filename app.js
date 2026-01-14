@@ -1,4 +1,6 @@
 (function () {
+  // Legacy local-only client catalog is disabled; Supabase-based flow below is the source of truth.
+  return;
   function byId(id) {
     return document.getElementById(id);
   }
