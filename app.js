@@ -1409,6 +1409,70 @@ const CC_KEY = "clientCatalog_v1";
 // In-memory source used by dropdown + (optional) table
 let clientRows = [];
 
+function normalizeClientKey(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getClientRowKey(row) {
+  const jobKey = normalizeClientKey(row && row.jobName);
+  if (jobKey) return jobKey;
+  const nameKey = normalizeClientKey(row && row.clientName);
+  return nameKey;
+}
+
+function pickNewerClientRow(a, b) {
+  const aId = Number(a && a.id);
+  const bId = Number(b && b.id);
+  if (!Number.isNaN(aId) && !Number.isNaN(bId) && aId !== bId) {
+    return aId > bId ? a : b;
+  }
+  if ((a && a.id) != null && (b && b.id) != null && a.id !== b.id) {
+    return String(a.id) > String(b.id) ? a : b;
+  }
+  return a;
+}
+
+function dedupeClientRows(rows) {
+  const map = new Map();
+  const list = Array.isArray(rows) ? rows : [];
+  for (let i = 0; i < list.length; i++) {
+    const row = list[i] || {};
+    const key = getClientRowKey(row);
+    if (!key) {
+      map.set("idx:" + i, row);
+      continue;
+    }
+    const prev = map.get(key);
+    map.set(key, prev ? pickNewerClientRow(prev, row) : row);
+  }
+  return Array.from(map.values());
+}
+
+async function cleanupDuplicateClientRows(rows) {
+  const seen = new Map();
+  const list = Array.isArray(rows) ? rows : [];
+  for (let i = 0; i < list.length; i++) {
+    const row = list[i] || {};
+    const key = getClientRowKey(row);
+    if (!key) continue;
+    const prev = seen.get(key);
+    if (!prev) {
+      seen.set(key, row);
+      continue;
+    }
+    const keep = pickNewerClientRow(prev, row);
+    const drop = keep === prev ? row : prev;
+    seen.set(key, keep);
+    if (drop && drop.id != null) {
+      try {
+        await softDeleteClientInSupabase(drop.id);
+      } catch (err) {
+        console.error("Failed to soft-delete duplicate client row:", err);
+      }
+    }
+  }
+}
+
 // ----- localStorage helpers -----
 function loadClientCatalog() {
   try {
@@ -1784,11 +1848,15 @@ function initClientCatalogUI() {
 
 async function refreshClientCatalogUI() {
   try {
-    clientRows = await loadClientCatalogFromSupabase();
+    const freshRows = await loadClientCatalogFromSupabase();
+    await cleanupDuplicateClientRows(freshRows);
+    clientRows = dedupeClientRows(freshRows);
   } catch (err) {
     console.error("Failed to load client catalog from Supabase", err);
-    // fall back to local cache
-    clientRows = loadClientCatalog();
+    // fall back to local cache only if we have nothing in memory
+    if (!clientRows || clientRows.length === 0) {
+      clientRows = dedupeClientRows(loadClientCatalog());
+    }
   }
 
   // Cache locally for offline + table UI
