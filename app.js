@@ -1421,6 +1421,11 @@ function getClientRowKey(row) {
 }
 
 function pickNewerClientRow(a, b) {
+  const aTime = Date.parse(a && a.createdAt);
+  const bTime = Date.parse(b && b.createdAt);
+  if (!Number.isNaN(aTime) && !Number.isNaN(bTime) && aTime !== bTime) {
+    return aTime > bTime ? a : b;
+  }
   const aId = Number(a && a.id);
   const bId = Number(b && b.id);
   if (!Number.isNaN(aId) && !Number.isNaN(bId) && aId !== bId) {
@@ -1463,7 +1468,15 @@ async function cleanupDuplicateClientRows(rows) {
     const keep = pickNewerClientRow(prev, row);
     const drop = keep === prev ? row : prev;
     seen.set(key, keep);
-    if (drop && drop.id != null) {
+    const keepTime = Date.parse(keep && keep.createdAt);
+    const dropTime = Date.parse(drop && drop.createdAt);
+    if (
+      drop &&
+      drop.id != null &&
+      !Number.isNaN(keepTime) &&
+      !Number.isNaN(dropTime) &&
+      dropTime !== keepTime
+    ) {
       try {
         await softDeleteClientInSupabase(drop.id);
       } catch (err) {
@@ -1491,7 +1504,7 @@ function saveClientCatalog(list) {
 
 async function loadClientCatalogFromSupabase() {
   const rows = await supaFetch(
-  "/client_catalog?select=id,job_name,controller_number,client_name,phone,email,address,city_state_zip,technician,active&active=eq.true&order=id.asc",
+  "/client_catalog?select=id,job_name,controller_number,client_name,phone,email,address,city_state_zip,technician,active,created_at&active=eq.true&order=created_at.asc",
   { method: "GET" }
 );
 
@@ -1506,6 +1519,7 @@ async function loadClientCatalogFromSupabase() {
   cityStateZip: r.city_state_zip ?? "",
   technician: r.technician ?? "",
   active: r.active ?? true,
+  createdAt: r.created_at ?? "",
 }));
 }
 
