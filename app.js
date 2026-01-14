@@ -808,6 +808,12 @@ async function syncCatalogToSupabase() {
       return false;
     }
   }
+  // Reset System Status selects on each page load.
+  if (state && state.client) {
+    state.client.statusOfController = "";
+    state.client.statusOfBackflow = "";
+    saveAll();
+  }
   function normalizeStations(list) {
     return (list || []).map((s, idx) => {
       const photos = Array.isArray(s.photos)
