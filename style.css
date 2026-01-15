@@ -31,6 +31,11 @@ body {
   background-attachment: fixed;
   color: #060606;
 }
+@supports (-webkit-touch-callout: none) {
+  body {
+    background-attachment: scroll;
+  }
+}
 
 .container {
   max-width: 1100px;
