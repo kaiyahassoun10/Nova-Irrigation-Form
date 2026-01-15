@@ -387,6 +387,17 @@
       req.onerror = () => reject(req.error || new Error("idb-del-failed"));
     });
   }
+  async function idbClearAll() {
+    idbCache.clear();
+    const db = await openIdb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.clear();
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error || new Error("idb-clear-failed"));
+    });
+  }
   const compressToLimit = async (file, maxBytes) => {
     const attempts = [
       { size: 900, quality: 0.7 },
@@ -796,6 +807,11 @@ async function syncCatalogToSupabase() {
       }
       return false;
     }
+  }
+  function clearStationsOnLoad() {
+    state.stations = [];
+    saveAll();
+    idbClearAll().catch(() => {});
   }
   // Reset System Status selects on each page load.
   if (state && state.client) {
@@ -1327,6 +1343,7 @@ $("#addCatalogItem").addEventListener("click", async () => {
       })
     );
   }
+  clearStationsOnLoad();
   renderCatalog();
   renderStations();
   migratePhotosToIdb();
