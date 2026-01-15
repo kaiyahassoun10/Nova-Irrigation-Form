@@ -361,6 +361,19 @@ textarea {
 #cc_table td {
   padding: 8px 10px;
 }
+#cc_table thead th:last-child {
+  text-align: center;
+}
+#cc_table td.num {
+  text-align: center;
+  white-space: nowrap;
+}
+#cc_table td.num .btn {
+  margin-right: 6px;
+}
+#cc_table td.num .btn:last-child {
+  margin-right: 0;
+}
 
 .station {
   border: 1px solid rgba(148, 163, 184, 0.5);
