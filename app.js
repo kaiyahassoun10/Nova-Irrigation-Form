@@ -1696,6 +1696,7 @@ function renderClientCatalog() {
       <td>${item.controller || ""}</td>
       <td>${item.clientName || ""}</td>
       <td>${item.clientPhone || ""}</td>
+      <td>${item.clientEmail || ""}</td>
       <td class="num">
         <button class="btn" data-edit="${idx}">Edit</button>
         <button class="btn" data-del="${idx}">Delete</button>
