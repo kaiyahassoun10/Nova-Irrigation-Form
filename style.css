@@ -1341,6 +1341,12 @@ th.num {
     margin: 0 0 10px 0;
     border-bottom: none;
   }
+  header .brand {
+    display: none !important;
+  }
+  .section-subtitle {
+    display: none !important;
+  }
 
   /* Logo should be a bit smaller on the report */
   header img,
