@@ -282,26 +282,32 @@ select::-ms-expand {
 
   #tab-stations .station .section-title {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.15;
     min-width: 0;
-    white-space: nowrap;
+  }
+  #tab-stations .station .section-title.station-title {
     overflow: hidden;
-    text-overflow: ellipsis;
+  }
+  #tab-stations .station .station-title {
+    gap: 3px;
   }
   #tab-stations .station .station-number-input {
-    width: 52px;
-    min-width: 52px;
-    padding: 2px 6px;
-    font-size: 13px;
+    width: 40px;
+    min-width: 40px;
+    padding: 2px 4px;
+    font-size: 12px;
   }
 
   #tab-stations .station .subtotal {
     margin: 0;
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.15;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  #tab-stations .station .subtotal::before {
+    content: "Subtotal: ";
   }
 
   #tab-stations .grid-3 {
@@ -381,9 +387,7 @@ select::-ms-expand {
     margin: 0;
     font-size: 20px;
     line-height: 1.15;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
   }
   #tab-stations .station .station-number-input {
     width: 58px;
@@ -472,9 +476,7 @@ select::-ms-expand {
     margin: 0;
     font-size: 22px;
     line-height: 1.15;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
   }
   #tab-stations .station .station-number-input {
     width: 62px;
@@ -893,6 +895,18 @@ img.photo {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+#tab-stations .station .section-title.station-title {
+  overflow: visible;
+  text-overflow: clip;
+}
+#tab-stations .station .section-title.station-title > span:first-child {
+  flex: 0 0 auto;
+  min-width: auto;
+  overflow: visible;
+  text-overflow: clip;
 }
 .station-number-input {
   width: 72px;
