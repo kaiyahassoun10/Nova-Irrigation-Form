@@ -292,8 +292,9 @@ select::-ms-expand {
   #tab-stations .station .station-title {
     gap: 3px;
   }
-  #tab-stations .station .station-number-input {
+  #tab-stations .station input.station-number-input {
     width: 40px;
+    max-width: 40px;
     min-width: 40px;
     padding: 2px 4px;
     font-size: 12px;
@@ -392,8 +393,9 @@ select::-ms-expand {
     line-height: 1.15;
     min-width: 0;
   }
-  #tab-stations .station .station-number-input {
+  #tab-stations .station input.station-number-input {
     width: 58px;
+    max-width: 58px;
     min-width: 58px;
     font-size: 14px;
   }
@@ -484,8 +486,9 @@ select::-ms-expand {
     line-height: 1.15;
     min-width: 0;
   }
-  #tab-stations .station .station-number-input {
+  #tab-stations .station input.station-number-input {
     width: 62px;
+    max-width: 62px;
     min-width: 62px;
     font-size: 14px;
   }
@@ -571,8 +574,9 @@ select::-ms-expand {
     gap: 4px;
   }
 
-  #tab-stations .station .station-number-input {
+  #tab-stations .station input.station-number-input {
     width: 44px;
+    max-width: 44px;
     min-width: 44px;
     padding: 2px 4px;
     font-size: 13px;
@@ -950,8 +954,10 @@ img.photo {
   overflow: visible;
   text-overflow: clip;
 }
-.station-number-input {
+#tab-stations .station input.station-number-input {
+  display: inline-block;
   width: 72px;
+  max-width: 72px;
   min-width: 56px;
   padding: 3px 8px;
   border-radius: 9999px;
@@ -966,36 +972,41 @@ img.photo {
   -webkit-appearance: textfield;
   -moz-appearance: textfield;
   appearance: textfield;
+  flex: 0 0 auto;
 }
-.station-number-input::-webkit-outer-spin-button,
-.station-number-input::-webkit-inner-spin-button {
+#tab-stations .station input.station-number-input::-webkit-outer-spin-button,
+#tab-stations .station input.station-number-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 @media (min-width: 768px) {
-  #tab-stations .station .station-number-input.no-print {
+  #tab-stations .station input.station-number-input.no-print {
     width: 56px;
+    max-width: 56px;
     min-width: 56px;
     padding: 2px 6px;
   }
 }
 @media (min-width: 1024px) {
-  #tab-stations .station .station-number-input.no-print {
+  #tab-stations .station input.station-number-input.no-print {
     width: 54px;
+    max-width: 54px;
     min-width: 54px;
     padding: 2px 6px;
   }
 }
 @media (min-width: 1440px) {
-  #tab-stations .station .station-number-input.no-print {
+  #tab-stations .station input.station-number-input.no-print {
     width: 52px;
+    max-width: 52px;
     min-width: 52px;
     padding: 2px 5px;
   }
 }
 @media (min-width: 2560px) {
-  #tab-stations .station .station-number-input.no-print {
+  #tab-stations .station input.station-number-input.no-print {
     width: 50px;
+    max-width: 50px;
     min-width: 50px;
     padding: 2px 5px;
   }
