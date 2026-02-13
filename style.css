@@ -379,6 +379,9 @@ select::-ms-expand {
   }
 
   #tab-stations .station .flex-between {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
     gap: 10px;
     margin-bottom: 7px;
   }
@@ -468,6 +471,9 @@ select::-ms-expand {
   }
 
   #tab-stations .station .flex-between {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
     gap: 12px;
     margin-bottom: 8px;
   }
@@ -542,6 +548,42 @@ select::-ms-expand {
 
   #tab-stations .station textarea {
     min-height: 82px;
+  }
+}
+
+@media (min-width: 426px) and (max-width: 480px) {
+  #tab-stations .station .flex-between {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  #tab-stations .station .section-title {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  #tab-stations .station .station-title {
+    gap: 4px;
+  }
+
+  #tab-stations .station .station-number-input {
+    width: 44px;
+    min-width: 44px;
+    padding: 2px 4px;
+    font-size: 13px;
+  }
+
+  #tab-stations .station .subtotal {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.15;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 
@@ -916,8 +958,11 @@ img.photo {
   border: 1px solid #94a3b8;
   background: #ffffff;
   color: #111827;
+  -webkit-text-fill-color: #111827;
   font-weight: 700;
   text-align: center;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
   -webkit-appearance: textfield;
   -moz-appearance: textfield;
   appearance: textfield;
