@@ -289,6 +289,12 @@ select::-ms-expand {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  #tab-stations .station .station-number-input {
+    width: 52px;
+    min-width: 52px;
+    padding: 2px 6px;
+    font-size: 13px;
+  }
 
   #tab-stations .station .subtotal {
     margin: 0;
@@ -379,6 +385,11 @@ select::-ms-expand {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  #tab-stations .station .station-number-input {
+    width: 58px;
+    min-width: 58px;
+    font-size: 14px;
+  }
 
   #tab-stations .station .subtotal {
     margin: 0;
@@ -464,6 +475,11 @@ select::-ms-expand {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  #tab-stations .station .station-number-input {
+    width: 62px;
+    min-width: 62px;
+    font-size: 14px;
   }
 
   #tab-stations .station .subtotal {
@@ -872,6 +888,58 @@ img.photo {
 .station-body {
   display: block;
   gap: 10px;
+}
+.station-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.station-number-input {
+  width: 72px;
+  min-width: 56px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 700;
+  text-align: center;
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.station-number-input::-webkit-outer-spin-button,
+.station-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+@media (min-width: 768px) {
+  #tab-stations .station .station-number-input.no-print {
+    width: 56px;
+    min-width: 56px;
+    padding: 2px 6px;
+  }
+}
+@media (min-width: 1024px) {
+  #tab-stations .station .station-number-input.no-print {
+    width: 54px;
+    min-width: 54px;
+    padding: 2px 6px;
+  }
+}
+@media (min-width: 1440px) {
+  #tab-stations .station .station-number-input.no-print {
+    width: 52px;
+    min-width: 52px;
+    padding: 2px 5px;
+  }
+}
+@media (min-width: 2560px) {
+  #tab-stations .station .station-number-input.no-print {
+    width: 50px;
+    min-width: 50px;
+    padding: 2px 5px;
+  }
 }
 .subtotal {
   font-weight: 800;

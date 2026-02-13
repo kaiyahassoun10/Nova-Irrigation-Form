@@ -1064,7 +1064,11 @@ $("#addCatalogItem").addEventListener("click", async () => {
   // Stations UI
   const stationsList = $("#stationsList");
   $("#addStationBtn").addEventListener("click", () => {
-    const nextNum = state.stations.length + 1;
+    const nextNum =
+      (state.stations || []).reduce(
+        (max, s) => Math.max(max, Number(s && s.number) || 0),
+        0
+      ) + 1;
     state.stations.push({
       number: nextNum,
       notes: "",
@@ -1113,9 +1117,24 @@ $("#addCatalogItem").addEventListener("click", async () => {
       const wrap = document.createElement("div");
       wrap.className = "station";
       const total = fmt.format(stationSubtotal(st));
+      const stationNum = Math.max(1, parseInt(st.number || si + 1, 10) || si + 1);
+      st.number = stationNum;
       wrap.innerHTML = `
         <div class="flex-between">
-          <div class="section-title">Station ${st.number}</div>
+          <div class="section-title station-title">
+            <span>Station</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              class="station-number-input no-print"
+              data-k="stationNumber"
+              value="${stationNum}"
+              aria-label="Station number"
+            />
+            <span class="print-only">${stationNum}</span>
+          </div>
           <div class="subtotal">${total}</div>
         </div>
 
@@ -1255,11 +1274,23 @@ $("#addCatalogItem").addEventListener("click", async () => {
         .querySelector('[data-act="removeStation"]')
         .addEventListener("click", () => {
           state.stations.splice(si, 1);
-          // Renumber
-          state.stations.forEach((s, idx) => (s.number = idx + 1));
           saveAll();
           renderStations();
         });
+      const stationNumberInput = wrap.querySelector('[data-k="stationNumber"]');
+      if (stationNumberInput) {
+        const commitStationNumber = () => {
+          const next = Math.max(
+            1,
+            parseInt(stationNumberInput.value || String(st.number || 1), 10) || 1
+          );
+          st.number = next;
+          stationNumberInput.value = String(next);
+          saveAll();
+        };
+        stationNumberInput.addEventListener("change", commitStationNumber);
+        stationNumberInput.addEventListener("blur", commitStationNumber);
+      }
       const photoInput = wrap.querySelector('[data-act="photoInput"]');
       const photoLibraryBtn = wrap.querySelector('[data-act="photoLibrary"]');
       const photoCameraBtn = wrap.querySelector('[data-act="photoCamera"]');
