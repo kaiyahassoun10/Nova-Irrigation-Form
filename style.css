@@ -1159,11 +1159,15 @@ th.num {
 
 /* Page size + margins for the PDF */
 @page {
-  size: Letter;
-  margin: 10mm;
+  size: 8.5in 11in;
+  margin: 0.4in;
 }
 
 @media print {
+  * {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
   .print-only {
     display: block !important;
   }
@@ -1192,6 +1196,7 @@ th.num {
   /* Use full page, white background */
   html,
   body {
+    width: 8.5in !important;
     margin: 0;
     padding: 0;
     background: #ffffff !important;
@@ -1207,10 +1212,10 @@ th.num {
   main,
   .page,
   .shell {
-    max-width: 100% !important;
-    width: 100% !important;
+    width: calc(8.5in - 0.8in) !important;
+    max-width: calc(8.5in - 0.8in) !important;
     margin: 0 !important;
-    padding: 10mm !important; /* keep light padding without forcing extra page space */
+    padding: 0 !important;
   }
   .container {
     padding-bottom: 0 !important;
@@ -1240,7 +1245,7 @@ th.num {
     break-before: auto;
     margin: 2mm auto 0 auto;
     width: 100%;
-    max-width: 900px;
+    max-width: none !important;
     min-height: auto;
     display: block;
     padding: 0;
@@ -1265,8 +1270,8 @@ th.num {
   /* Center first-page content with larger top spacing */
   header {
     margin: 12mm auto 12mm auto !important;
-    width: 90%;
-    max-width: 900px;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   #tab-client {
@@ -1274,8 +1279,8 @@ th.num {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 90%;
-    max-width: 900px;
+    width: 100% !important;
+    max-width: none !important;
     min-height: auto;
     margin: 0 auto 12mm auto;
     padding: 0;
@@ -1658,36 +1663,5 @@ th.num {
   #tab-catalog .catalog-grid > .grid-3 button[data-act="remove"] {
     min-height: 40px;
     font-size: 13px;
-  }
-}
-
-@media print {
-  /* ❌ Hide supporting header text on PDF */
-  header h2,
-  header p,
-  header span,
-  header .brand-text,
-  header .brand-subtitle {
-    display: none !important;
-  }
-
-  /* ✅ Show ONLY the logo centered on PDF */
-  header img,
-  header .logo {
-    display: block !important;
-    margin: 0 auto 8px auto !important;
-    max-height: 60px !important;
-    width: auto !important;
-  }
-
-  /* Hide brand container and subtitles in PDF */
-  header .brand,
-  .section-subtitle {
-    display: none !important;
-  }
-
-  /* Hide the on-screen title on PDF; show logo only */
-  header h1 {
-    display: none !important;
   }
 }
