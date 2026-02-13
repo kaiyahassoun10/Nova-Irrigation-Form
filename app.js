@@ -924,12 +924,33 @@ async function syncCatalogToSupabase() {
     }
   });
 
+  function syncStationNumbersForPrint() {
+    const stationEls = Array.from(document.querySelectorAll("#stationsList .station"));
+    stationEls.forEach((stationEl, si) => {
+      const input = stationEl.querySelector('[data-k="stationNumber"]');
+      const printValue = stationEl.querySelector(".station-title .print-only");
+      const fallback = Math.max(
+        1,
+        parseInt(String((state.stations && state.stations[si] && state.stations[si].number) || si + 1), 10) || si + 1
+      );
+      const parsed = Math.max(
+        1,
+        parseInt(String((input && input.value) || fallback), 10) || fallback
+      );
+      if (state.stations && state.stations[si]) state.stations[si].number = parsed;
+      if (input) input.value = String(parsed);
+      if (printValue) printValue.textContent = String(parsed);
+    });
+  }
+
   // Ensure date text is up-to-date right before print (helps mobile)
   const syncPrintDateOnce = () => {
     const span = $("#datePrintValue");
     if (span && state.client) {
       span.textContent = formatDateForPrint(state.client.date || "");
     }
+    syncStationNumbersForPrint();
+    saveAll();
   };
   try {
     window.addEventListener("beforeprint", syncPrintDateOnce);
@@ -1278,16 +1299,31 @@ $("#addCatalogItem").addEventListener("click", async () => {
           renderStations();
         });
       const stationNumberInput = wrap.querySelector('[data-k="stationNumber"]');
+      const stationNumberPrint = wrap.querySelector(".station-title .print-only");
       if (stationNumberInput) {
+        const syncStationNumberWhileTyping = () => {
+          const raw = String(stationNumberInput.value || "").replace(/\D+/g, "");
+          if (raw !== stationNumberInput.value) {
+            stationNumberInput.value = raw;
+          }
+          if (!raw) return;
+          const next = Math.max(1, parseInt(raw, 10) || 1);
+          st.number = next;
+          if (stationNumberPrint) stationNumberPrint.textContent = String(next);
+          saveAll();
+        };
         const commitStationNumber = () => {
+          const raw = String(stationNumberInput.value || "").replace(/\D+/g, "");
           const next = Math.max(
             1,
-            parseInt(stationNumberInput.value || String(st.number || 1), 10) || 1
+            parseInt(raw || String(st.number || 1), 10) || 1
           );
           st.number = next;
           stationNumberInput.value = String(next);
+          if (stationNumberPrint) stationNumberPrint.textContent = String(next);
           saveAll();
         };
+        stationNumberInput.addEventListener("input", syncStationNumberWhileTyping);
         stationNumberInput.addEventListener("change", commitStationNumber);
         stationNumberInput.addEventListener("blur", commitStationNumber);
       }
