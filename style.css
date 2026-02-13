@@ -591,6 +591,49 @@ select::-ms-expand {
   }
 }
 
+/* iPhone safety override for station title/input/subtotal row */
+@media (max-width: 480px) {
+  #tab-stations .station .flex-between {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  #tab-stations .station .section-title.station-title {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: start;
+    column-gap: 4px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  #tab-stations .station .section-title.station-title > span:first-child {
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  #tab-stations .station input.station-number-input.no-print {
+    width: 40px !important;
+    max-width: 40px !important;
+    min-width: 40px !important;
+    padding: 2px 3px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    opacity: 1 !important;
+    flex: 0 0 auto !important;
+  }
+
+  #tab-stations .station .subtotal {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
 /* iOS date inputs can overflow their grid cell */
 #tab-client input[type="date"] {
   min-width: 0;
