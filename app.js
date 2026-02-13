@@ -1124,14 +1124,14 @@ $("#addCatalogItem").addEventListener("click", async () => {
           <div class="section-title station-title">
             <span>Station</span>
             <input
-              type="number"
-              min="1"
-              step="1"
+              type="text"
               inputmode="numeric"
+              pattern="[0-9]*"
               class="station-number-input no-print"
               data-k="stationNumber"
               value="${stationNum}"
               aria-label="Station number"
+              style="display:inline-block;width:40px;max-width:40px;min-width:40px;padding:2px 4px;border-radius:9999px;border:1px solid #94a3b8;background:#ffffff;color:#111827;-webkit-text-fill-color:#111827;text-align:center;font-weight:700;line-height:1;flex:0 0 auto;"
             />
             <span class="print-only">${stationNum}</span>
           </div>
