@@ -1196,7 +1196,7 @@ th.num {
   /* Use full page, white background */
   html,
   body {
-    width: 8.5in !important;
+    width: 100% !important;
     margin: 0;
     padding: 0;
     background: #ffffff !important;
@@ -1214,7 +1214,7 @@ th.num {
   .shell {
     width: calc(8.5in - 0.8in) !important;
     max-width: calc(8.5in - 0.8in) !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
   }
   .container {
