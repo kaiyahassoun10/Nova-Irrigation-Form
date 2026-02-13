@@ -1595,10 +1595,15 @@ th.num {
   #tab-stations .station .photo-box {
     width: 100% !important;
     flex: none !important;
+    aspect-ratio: 1 / 1 !important;
+    overflow: hidden !important;
+    border-radius: 8px !important;
   }
   #tab-stations .station .photo-item img.photo,
   #tab-stations .station .photo-box {
     width: 100% !important;
+    height: 100% !important;
+    display: block !important;
     aspect-ratio: 1 / 1 !important;
     object-fit: cover !important;
     border-radius: 8px !important;
