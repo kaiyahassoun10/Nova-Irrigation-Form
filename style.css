@@ -1562,6 +1562,51 @@ th.num {
     margin-bottom: 0 !important;
   }
 
+  /* Force one shared station + photo print layout across iPhone/iPad/laptop */
+  #tab-stations .station {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    padding: 6px !important;
+    margin: 6px 0 !important;
+  }
+  #tab-stations .station .flex-between {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  #tab-stations .station .grid-3 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: end !important;
+  }
+  #tab-stations .station .grid-3 > div:nth-child(3) {
+    display: none !important;
+  }
+  #tab-stations .station .photo-list {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  #tab-stations .station .photo-item,
+  #tab-stations .station .photo-box {
+    width: 100% !important;
+    flex: none !important;
+  }
+  #tab-stations .station .photo-item img.photo,
+  #tab-stations .station .photo-box {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+  }
+  #tab-stations .station .station-side {
+    margin-top: 6px !important;
+  }
+
   /* Grand Total at bottom */
   #grandTotalTop,
   .totals {
