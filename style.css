@@ -14,6 +14,11 @@
 
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   min-height: 100vh;
   height: auto;
@@ -631,6 +636,39 @@ select::-ms-expand {
   #tab-stations .station .subtotal {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
+  }
+
+  /* Match compact phone layout from emulator */
+  #tab-stations .station {
+    padding: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  #tab-stations .station .section-title {
+    font-size: 16px !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+  }
+
+  #tab-stations .station .subtotal {
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  #tab-stations .station input.station-number-input.no-print {
+    width: 34px !important;
+    max-width: 34px !important;
+    min-width: 34px !important;
+    height: 24px !important;
+    padding: 1px 2px !important;
+    font-size: 12px !important;
+    border-radius: 9999px !important;
+  }
+
+  #tab-stations .row.no-print .btn {
+    min-height: 38px !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
   }
 }
 
